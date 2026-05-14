@@ -1,0 +1,206 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
+
+namespace Rendering.KageRP
+{
+    public class KageRenderPipeline : RenderPipeline
+    {
+        private readonly KageRenderPipelineAsset _asset;
+        private readonly RenderGraph _renderGraph = new("Kage RenderGraph");
+        private readonly ContextContainer _frameData = new();
+
+        private readonly List<AbstractRenderGraphPass> _passes = new();
+
+        public KageRenderPipeline(KageRenderPipelineAsset asset)
+        {
+            _asset = asset;
+            foreach (var pass in asset.Passes) _passes.Add(pass);
+        }
+
+        protected override void Render(ScriptableRenderContext context, List<Camera> cameras)
+        {
+            // TODO: Setup blit shaders!
+            // Blitter.Initialize(BlitShader, BlitColorAndDepth);
+            
+            foreach (var camera in cameras)
+            {
+                var cmd = CommandBufferPool.Get();
+
+                var sampler = ProfilingSampler.Get(camera.cameraType);
+
+                var rgParams = new RenderGraphParameters()
+                {
+                    commandBuffer = cmd,
+                    executionId = camera.GetEntityId(),
+                    currentFrameIndex = Time.frameCount,
+                    scriptableRenderContext = context,
+                    renderTextureUVOriginStrategy = RenderTextureUVOriginStrategy.BottomLeft,
+                    rendererListCulling = true,
+                };
+
+                _frameData.Dispose();
+
+                foreach (var pass in _passes)
+                {
+                    pass.Setup(_asset, this);
+                }
+
+                if (camera.cameraType is CameraType.Game)
+                {
+                    // TODO: Make interface to insert custom setup logic
+                    DynamicGI.UpdateEnvironment();
+                }
+
+                try
+                {
+                    _renderGraph.BeginRecording(rgParams);
+                    using var _ = new RenderGraphProfilingScope(_renderGraph, sampler);
+
+                    // TODO: Move camera setup out of Culling!!!
+                    // TODO: Create CullingData
+                    var cullingResultData = Culling(camera, context, _renderGraph, _frameData);
+                    foreach (var pass in _passes) pass.AfterCameraCulling(context, cullingResultData, _frameData);
+
+                    // TODO: Use backbuffer as GBuffer0?
+                    // TODO: Init main lighting data
+                    SetupLighting(_renderGraph, _frameData);
+                    foreach (var pass in _passes)
+                    {
+                        // TODO: Use try catch only in Editor or debug!
+                        try
+                        {
+                            pass.LastExecutionException = null;
+                            pass.Record(_renderGraph, _frameData);
+                        }
+                        catch (Exception ex)
+                        {
+                            pass.LastExecutionStatus = false;
+                            pass.LastExecutionException = ex;
+                            Debug.LogException(ex);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+                finally
+                { 
+                    _renderGraph.EndRecordingAndExecute();
+                }
+
+                // TODO: Do not execute commands, when exception occured!
+                context.ExecuteCommandBuffer(rgParams.commandBuffer);
+                rgParams.commandBuffer.Clear();
+
+                DrawGizmos(context, camera);
+
+                context.Submit();
+
+                CommandBufferPool.Release(rgParams.commandBuffer);
+            }
+
+            _renderGraph.EndFrame();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            _renderGraph.Cleanup();
+        }
+
+        private CullingResultData Culling(
+            Camera camera,
+            ScriptableRenderContext context,
+            RenderGraph renderGraph,
+            ContextContainer frameData
+        )
+        {
+            var cameraData = frameData.Create<CameraData>();
+
+            var cullingResultData = frameData.Create<CullingResultData>();
+
+            cameraData.Camera = camera;
+            cameraData.TargetDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
+            cameraData.CameraBackBuffer = renderGraph.ImportBackbuffer(
+                new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget)
+            );
+
+            context.SetupCameraProperties(camera);
+            camera.TryGetCullingParameters(out var cullingParameters);
+            cullingParameters.shadowDistance = 8.0f;
+            cullingParameters.shadowNearPlaneOffset = 0.0f;
+
+            cullingResultData.CullingResult = context.Cull(ref cullingParameters);
+
+            var lightingData = frameData.GetOrCreate<LightingData>();
+            lightingData.MainLightIndex = -1;
+            for (var lightIndex = 0; lightIndex < cullingResultData.CullingResult.visibleLights.Length; lightIndex++)
+            {
+                var visibleLight = cullingResultData.CullingResult.visibleLights[lightIndex];
+                if (visibleLight.lightType == LightType.Directional)
+                {
+                    lightingData.MainLightIndex = lightIndex;
+                    break;
+                }
+            }
+            
+            return cullingResultData;
+        }
+
+        private class SetupLightingPassData
+        {
+            public Vector4 MainLightDirection;
+            public Color MainLightColor;
+        }
+
+        private void SetupLighting(RenderGraph renderGraph, ContextContainer frameData)
+        {
+            var cullingResultData = frameData.Get<CullingResultData>();
+
+            using var builder = _renderGraph.AddUnsafePass<SetupLightingPassData>("Setup Lighting", out var passData);
+
+            passData.MainLightColor = Color.black;
+            foreach (var visibleLight in cullingResultData.CullingResult.visibleLights)
+            {
+                if (visibleLight.lightType == LightType.Directional)
+                {
+                    passData.MainLightColor = visibleLight.finalColor;
+                    passData.MainLightDirection = -visibleLight.localToWorldMatrix.GetColumn(2);
+                    break;
+                }
+            }
+
+            builder.AllowPassCulling(false);
+            builder.AllowGlobalStateModification(true);
+            builder.SetRenderFunc<SetupLightingPassData>(static (data, context) =>
+            {
+                context.cmd.SetGlobalVector("_MainLightPosition", data.MainLightDirection);
+                context.cmd.SetGlobalColor("_MainLightColor", data.MainLightColor);
+            });
+        }
+
+
+        private static void DrawGizmos(ScriptableRenderContext context, Camera camera)
+        {
+#if UNITY_EDITOR
+            if (camera.cameraType is CameraType.SceneView)
+            {
+                ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
+            }
+
+            if (camera.cameraType is CameraType.Game or CameraType.SceneView &&
+                UnityEditor.Handles.ShouldRenderGizmos())
+            {
+                context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
+                context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
+                context.DrawWireOverlay(camera);
+                // context.DrawUIOverlay(camera);
+            }
+#endif
+        }
+    }
+}

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ae309beca6c442b9be3fc328f884742, type: 3}
+  m_Name: KageRP_Asset
+  m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.MyRenderPipelineAsset
+  DefaultResources: {fileID: 11400000, guid: 25f867cbf95604cb980b2f5428e9b14f, type: 2}
+  Passes:
+  - rid: 6020882026368598016
+  - rid: 6020882026368598017
+  - rid: 6020882026368598018
+  - rid: 6020882026368598071
+  - rid: 6020882026368598070
+  references:
+    version: 2
+    RefIds:
+    - rid: 6020882026368598016
+      type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        Resolution: 512
+    - rid: 6020882026368598017
+      type: {class: GBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data: 
+    - rid: 6020882026368598018
+      type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data: 
+    - rid: 6020882026368598070
+      type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data: 
+    - rid: 6020882026368598071
+      type: {class: SkyboxPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data: 
