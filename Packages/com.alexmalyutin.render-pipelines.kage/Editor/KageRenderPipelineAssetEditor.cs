@@ -83,14 +83,16 @@ namespace Rendering.KageRP.Editor
             propRect.height -= Padding;
             EditorGUI.PropertyField(propRect, element, new GUIContent(type.Name), true);
 
-            // TODO: Add pass execution validation.
-            if (pass.LastExecutionStatus == false)
+            if (pass.LastExecutionException != null)
             {
+                var iconSize = InnerElementHeight + 2;
                 Rect iconRect = new Rect(
-                    rect.xMax - InnerElementHeight - Padding, rect.y + Padding,
-                    InnerElementHeight, InnerElementHeight
+                    rect.xMax - iconSize - 3, 
+                    rect.y + Padding,
+                    iconSize,
+                    iconSize
                 );
-                GUIContent warningIcon = EditorGUIUtility.IconContent("console.warnicon");
+                GUIContent warningIcon = EditorGUIUtility.IconContent("console.erroricon");
                 warningIcon.tooltip = pass.LastExecutionException.Message;
                 GUI.Label(iconRect, warningIcon);
             }

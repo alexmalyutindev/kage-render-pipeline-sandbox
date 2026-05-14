@@ -14,27 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.MyRenderPipelineAsset
   DefaultResources: {fileID: 11400000, guid: 25f867cbf95604cb980b2f5428e9b14f, type: 2}
   Passes:
-  - rid: 6020882026368598016
-  - rid: 6020882026368598017
-  - rid: 6020882026368598018
-  - rid: 6020882026368598071
-  - rid: 6020882026368598070
+  - rid: 6020882026761289779
+  - rid: 6020882026761289780
+  - rid: 6020882026761289781
+  - rid: 6020882026761289782
+  - rid: 6020882026761289783
   references:
     version: 2
     RefIds:
-    - rid: 6020882026368598016
+    - rid: 6020882026761289779
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
-        Resolution: 512
-    - rid: 6020882026368598017
+        Resolution: 256
+    - rid: 6020882026761289780
       type: {class: GBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data: 
-    - rid: 6020882026368598018
+    - rid: 6020882026761289781
       type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data: 
-    - rid: 6020882026368598070
-      type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data: 
-    - rid: 6020882026368598071
+    - rid: 6020882026761289782
       type: {class: SkyboxPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data: 
+    - rid: 6020882026761289783
+      type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data: 

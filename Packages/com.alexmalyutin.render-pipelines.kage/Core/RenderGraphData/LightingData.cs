@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Rendering.KageRP
 {
@@ -16,6 +17,7 @@ namespace Rendering.KageRP
         public Matrix4x4 MainLightShadowView;
         public Matrix4x4 MainLightShadowProj;
         public ShadowSplitData MainLightShadowSplitData;
+        public TextureHandle MainLightShadowMap;
 
         public Matrix4x4 GetWorldToShadowMatrix()
         {

@@ -7,7 +7,6 @@ namespace Rendering.KageRP
     [Serializable]
     public abstract class AbstractRenderGraphPass
     {
-        public bool LastExecutionStatus { get; set; }
         public Exception LastExecutionException { get; set; }
 
         public virtual void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline) { }

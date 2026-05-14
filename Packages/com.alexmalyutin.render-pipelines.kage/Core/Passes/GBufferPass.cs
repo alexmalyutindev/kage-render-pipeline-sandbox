@@ -63,6 +63,7 @@ namespace Rendering.KageRP
                 format = GraphicsFormat.D24_UNorm_S8_UInt,
                 depthBufferBits = DepthBits.Depth24,
                 msaaSamples = MSAASamples.None,
+                clearBuffer = true,
             };
             passData.Depth = renderGraph.CreateTexture(depthDesc);
 
@@ -91,6 +92,11 @@ namespace Rendering.KageRP
 
             builder.AllowPassCulling(false);
 
+            if (lightingData.MainLightShadowMap.IsValid())
+            {
+                builder.UseTexture(lightingData.MainLightShadowMap);
+            }
+
             builder.SetRenderAttachment(passData.GBuffer0, 0);
             builder.SetRenderAttachment(passData.GBuffer1, 1);
             builder.SetRenderAttachment(passData.GBuffer2, 2);
@@ -103,7 +109,6 @@ namespace Rendering.KageRP
 
             builder.SetRenderFunc<GBufferPassData>(static (data, context) =>
             {
-                context.cmd.ClearRenderTarget(RTClearFlags.Stencil, Color.clear, 0.0f, 0);
                 context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
                 context.cmd.DrawRendererList(data.List);
             });

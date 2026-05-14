@@ -137,6 +137,8 @@ Shader "KageRP/Lit"
             HLSLPROGRAM
             #pragma vertex Vertex
             #pragma fragment Fragment
+            
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Shadows.hlsl"
 
             struct Attributes
             {
@@ -148,7 +150,6 @@ Shader "KageRP/Lit"
             struct Varyings
             {
                 float2 uv : TEXCOORD0;
-                half3 normalWS : TEXCOORD1;
                 float4 postionCS : SV_POSITION;
             };
 
@@ -158,11 +159,11 @@ Shader "KageRP/Lit"
 
                 output.uv = mad(input.uv, _MainTex_ST.xy, _MainTex_ST.zw);
 
-                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
                 float3 positionWS = TransformObjectToWorld(input.positionOS);
-                positionWS -= _MainLightPosition.xyz * 0.02f;
-                positionWS -= output.normalWS * 0.02f;
-                output.postionCS = TransformWorldToHClip(positionWS);
+                output.postionCS = TransformWorldToHClip(
+                    ApplyShadowBias(positionWS, normalWS, -_MainLightPosition.xyz)
+                );
                 return output;
             }
             

@@ -77,7 +77,6 @@ namespace Rendering.KageRP
                         }
                         catch (Exception ex)
                         {
-                            pass.LastExecutionStatus = false;
                             pass.LastExecutionException = ex;
                             Debug.LogException(ex);
                         }
