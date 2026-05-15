@@ -2,7 +2,8 @@
     "name": "Rendering.KageRP.Editor",
     "rootNamespace": "Rendering.KageRP",
     "references": [
-        "Rendering.KageRP.Core"
+        "Rendering.KageRP.Core",
+        "Unity.RenderPipelines.Core.Editor"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,9 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Rendering.KageRP
 {
+    [Serializable]
     public class SkyboxPass : AbstractRenderGraphPass
     {
         private class SkyBoxPassData

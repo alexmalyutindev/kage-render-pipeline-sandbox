@@ -1,8 +1,10 @@
+using System;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Rendering.KageRP
 {
+    [Serializable]
     public class FinalBlitPass : AbstractRenderGraphPass
     {
         private class PassData

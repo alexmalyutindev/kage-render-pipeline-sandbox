@@ -1,9 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Rendering.KageRP
 {
+    [Serializable]
     public class DeferredLightingPass : AbstractRenderGraphPass
     {
         private KageRenderPipelineDefaultResources _defaultResources;
