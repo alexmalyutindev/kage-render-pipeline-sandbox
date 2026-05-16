@@ -238,8 +238,8 @@ half3 MobilePBR(BRDFData brdfData)
     half4 encodedReflection = SampleEncodedEnvironmentReflection(reflectV, brdfData.roughness);
 
     half3 diffuseColor = lerp(brdfData.albedo, 0.0h, brdfData.metallic);
-    float specularPower = exp2(10.0h * (1.0h - brdfData.roughness) + 1.0h); // 512.0h * (1.0h - roughness);
-    float specularNormalization = (specularPower + 2.0h) / 8.0h;
+    half specularPower = exp2(10.0h * (1.0h - brdfData.roughness) + 1.0h); // 512.0h * (1.0h - roughness);
+    half specularNormalization = (specularPower + 2.0h) / 8.0h;
     // (1.04h - roughness) * (specularPower + 8.0) / 8.0;
 
     // Direct
@@ -248,9 +248,10 @@ half3 MobilePBR(BRDFData brdfData)
     half3 L = mainLight.direction;
     half3 H = normalize(V + L);
     half NdotL = max(0.0h, dot(N, L));
-    float NdotH = max(0.0h, dot(N, H));
+    half NdotH = max(0.0h, dot(normalize(N), normalize(H)));
 
-    float specularTerm = specularNormalization * pow(NdotH, specularPower);
+    // BUG: SpecularTerm looks quantized, using half computation.
+    half specularTerm = specularNormalization * pow(NdotH, specularPower);
     half3 specular = F0 * mainLight.color * specularTerm;
 
     half3 diffuse = diffuseColor * mainLight.color * NdotL;

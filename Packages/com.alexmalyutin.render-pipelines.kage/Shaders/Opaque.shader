@@ -104,7 +104,7 @@ Shader "KageRP/Opaque"
                 half occlusion = SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).x;
 
                 half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
-                half3 normalWS = TransformTangentToWorld(normalTS, tbn, true);
+                half3 normalWS = TransformTangentToWorld(normalTS, tbn, false);
 
                 BRDFData data;
                 data.albedo = albedoAlpha.rgb;
@@ -112,7 +112,7 @@ Shader "KageRP/Opaque"
                 data.metallic = metallic * _Metallic;
                 data.roughness = roughness * _Roughness;
                 data.occlusion = occlusion;
-                data.viewDirectionWS = normalize(_WorldSpaceCameraPos - input.positionWS);
+                data.viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
                 data.bakedGI = SampleGI(normalWS);
                 data.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 data.emission = 0.0h;

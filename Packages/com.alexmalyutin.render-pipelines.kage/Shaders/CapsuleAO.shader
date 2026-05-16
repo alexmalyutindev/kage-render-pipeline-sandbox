@@ -17,7 +17,7 @@ Shader "KageRP/CapsuleAO"
         {
             Tags
             {
-                "LightMode" = "KageForward"
+                "LightMode" = "ForwardLit"
             }
 
             Name "ForwardLit"

@@ -40,7 +40,7 @@ Shader "KageRP/Transparent"
         {
             Tags
             {
-                "LightMode" = "KageForward"
+                "LightMode" = "ForwardLit"
             }
 
             Name "ForwardLit"

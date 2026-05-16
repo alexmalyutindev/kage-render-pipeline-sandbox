@@ -39,7 +39,7 @@ namespace Rendering.KageRP
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
 
-            var shaderPassName = new ShaderTagId("KageForward");
+            var shaderPassName = new ShaderTagId("ForwardLit");
             var drawingSettings = new DrawingSettings(shaderPassName, new SortingSettings(cameraData.Camera))
             {
                 mainLightIndex = lightingData.MainLightIndex,
