@@ -41,12 +41,12 @@ GBuffer OutputGBuffer(half3 color, BRDFData data)
 
     GBuffer output;
     output.GBuffer0 = half4(color, 1.0h);
-    output.GBuffer1 = half4(
+    output.GBuffer1 = half4(data.albedo, data.occlusion);
+    output.GBuffer2 = half4(
         normalVS.xy * 0.5h + 0.5h,
         data.metallic,
         data.roughness
     );
-    output.GBuffer2 = half4(data.albedo, data.occlusion);
     return output;
 }
 

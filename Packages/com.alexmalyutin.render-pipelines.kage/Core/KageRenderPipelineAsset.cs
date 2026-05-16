@@ -14,7 +14,7 @@ namespace Rendering.KageRP
         {
             new MainLightShadowPass(),
             new GBufferPass(),
-            new DeferredLightingPass(),
+            new DeferredLitPass(),
             new SkyboxPass(),
             new FinalBlitPass(),
         };

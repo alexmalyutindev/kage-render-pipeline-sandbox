@@ -11,6 +11,8 @@ namespace Rendering.KageRP
 
         public virtual void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline) { }
 
+        public virtual void BeforeCameraCulling(ref ScriptableCullingParameters cullingParameters) { }
+
         public virtual void AfterCameraCulling(
             ScriptableRenderContext context,
             CullingResultData cullingResultData,
@@ -18,6 +20,7 @@ namespace Rendering.KageRP
         ) { }
 
         public abstract void Record(RenderGraph renderGraph, ContextContainer frameData);
+
         public virtual void CleanUp() { }
     }
 }

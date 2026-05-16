@@ -6,7 +6,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 namespace Rendering.KageRP
 {
     [Serializable]
-    public class DeferredLightingPass : AbstractRenderGraphPass
+    public class DeferredLitPass : AbstractRenderGraphPass
     {
         private KageRenderPipelineDefaultResources _defaultResources;
         private readonly VisibleLight[] _pointLights = new VisibleLight[128];
@@ -72,7 +72,7 @@ namespace Rendering.KageRP
         private void DrawLights(RenderGraph renderGraph, GBufferData gBufferData, CameraData cameraData,
             DeferredLightData deferredLightData)
         {
-            using var builder = renderGraph.AddRasterRenderPass<PassData>("DeferredLighting", out var passData);
+            using var builder = renderGraph.AddRasterRenderPass<PassData>("DeferredLit", out var passData);
             builder.AllowPassCulling(false);
 
             passData.View = cameraData.Camera.worldToCameraMatrix;

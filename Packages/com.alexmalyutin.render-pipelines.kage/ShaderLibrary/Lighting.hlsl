@@ -234,7 +234,7 @@ half3 MobilePBR(BRDFData brdfData)
 
     // Environment
     float2 envBRDF = GetEnvBRDF(NdotV, brdfData.roughness);
-    half3 reflectV = reflect(V, N);
+    half3 reflectV = reflect(-V, N);
     half4 encodedReflection = SampleEncodedEnvironmentReflection(reflectV, brdfData.roughness);
 
     half3 diffuseColor = lerp(brdfData.albedo, 0.0h, brdfData.metallic);

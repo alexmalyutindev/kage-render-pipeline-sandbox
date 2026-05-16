@@ -39,6 +39,15 @@ half SampleMainLightShadowMap2x2(float4 shadowCoords)
     return attenuation * 0.2h;
 }
 
+half GetMainLightShadow(float4 shadowCoords)
+{
+    #if defined(MAIN_LIGHT_SHADOW_ON)
+    return SampleMainLightShadowMap2x2(shadowCoords);
+    #else
+    return 1.0h;
+    #endif
+}
+
 struct Light
 {
     half3 color;
@@ -51,7 +60,7 @@ Light GetMainLight(float4 shadowCoords)
     Light light;
     light.color = _MainLightColor.rgb;
     light.direction = _MainLightPosition.xyz;
-    light.attenuation = SampleMainLightShadowMap2x2(shadowCoords);
+    light.attenuation = GetMainLightShadow(shadowCoords);
     return light;
 }
 

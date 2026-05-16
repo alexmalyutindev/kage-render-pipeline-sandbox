@@ -26,11 +26,12 @@ MonoBehaviour:
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         Resolution: 256
+        ShadowDistance: 10
     - rid: 6020882026761289780
       type: {class: GBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data: 
     - rid: 6020882026761289781
-      type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      type: {class: DeferredLitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data: 
     - rid: 6020882026761289782
       type: {class: SkyboxPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}

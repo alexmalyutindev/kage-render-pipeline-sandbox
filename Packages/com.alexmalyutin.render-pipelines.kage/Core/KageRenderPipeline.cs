@@ -24,7 +24,7 @@ namespace Rendering.KageRP
         {
             // TODO: Setup blit shaders!
             // Blitter.Initialize(BlitShader, BlitColorAndDepth);
-            
+
             foreach (var camera in cameras)
             {
                 var cmd = CommandBufferPool.Get();
@@ -59,14 +59,25 @@ namespace Rendering.KageRP
                     _renderGraph.BeginRecording(rgParams);
                     using var _ = new RenderGraphProfilingScope(_renderGraph, sampler);
 
-                    // TODO: Move camera setup out of Culling!!!
-                    // TODO: Create CullingData
-                    var cullingResultData = Culling(camera, context, _renderGraph, _frameData);
-                    foreach (var pass in _passes) pass.AfterCameraCulling(context, cullingResultData, _frameData);
+                    InitCameraData(camera, _renderGraph, _frameData);
+
+                    // NOTE: Culling
+                    {
+                        context.SetupCameraProperties(camera);
+                        camera.TryGetCullingParameters(out var cullingParameters);
+                        foreach (var pass in _passes) pass.BeforeCameraCulling(ref cullingParameters);
+                        var cullingResultData = Culling(context, _frameData, ref cullingParameters);
+                        // TODO: Don't like that lighting data initialization here.
+                        InitLightingData(_frameData, cullingResultData);
+
+                        foreach (var pass in _passes) pass.AfterCameraCulling(context, cullingResultData, _frameData);
+                    }
 
                     // TODO: Use backbuffer as GBuffer0?
                     // TODO: Init main lighting data
+                    // TODO: Move this into PASS
                     SetupLighting(_renderGraph, _frameData);
+
                     foreach (var pass in _passes)
                     {
                         // TODO: Use try catch only in Editor or debug!
@@ -87,7 +98,7 @@ namespace Rendering.KageRP
                     Debug.LogException(e);
                 }
                 finally
-                { 
+                {
                     _renderGraph.EndRecordingAndExecute();
                 }
 
@@ -111,30 +122,15 @@ namespace Rendering.KageRP
             _renderGraph.Cleanup();
         }
 
-        private CullingResultData Culling(
-            Camera camera,
-            ScriptableRenderContext context,
-            RenderGraph renderGraph,
-            ContextContainer frameData
-        )
+        private CullingResultData Culling(ScriptableRenderContext context, ContextContainer frameData, ref ScriptableCullingParameters cullingParameters)
         {
-            var cameraData = frameData.Create<CameraData>();
-
             var cullingResultData = frameData.Create<CullingResultData>();
-
-            cameraData.Camera = camera;
-            cameraData.TargetDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
-            cameraData.CameraBackBuffer = renderGraph.ImportBackbuffer(
-                new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget)
-            );
-
-            context.SetupCameraProperties(camera);
-            camera.TryGetCullingParameters(out var cullingParameters);
-            cullingParameters.shadowDistance = 8.0f;
-            cullingParameters.shadowNearPlaneOffset = 0.0f;
-
             cullingResultData.CullingResult = context.Cull(ref cullingParameters);
+            return cullingResultData;
+        }
 
+        private static void InitLightingData(ContextContainer frameData, CullingResultData cullingResultData)
+        {
             var lightingData = frameData.GetOrCreate<LightingData>();
             lightingData.MainLightIndex = -1;
             for (var lightIndex = 0; lightIndex < cullingResultData.CullingResult.visibleLights.Length; lightIndex++)
@@ -146,8 +142,17 @@ namespace Rendering.KageRP
                     break;
                 }
             }
-            
-            return cullingResultData;
+        }
+
+        private static void InitCameraData(Camera camera, RenderGraph renderGraph, ContextContainer frameData)
+        {
+            var cameraData = frameData.Create<CameraData>();
+
+            cameraData.Camera = camera;
+            cameraData.TargetDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
+            cameraData.CameraBackBuffer = renderGraph.ImportBackbuffer(
+                new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget)
+            );
         }
 
         private class SetupLightingPassData

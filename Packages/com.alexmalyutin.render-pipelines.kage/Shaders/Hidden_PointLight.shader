@@ -81,7 +81,7 @@ Shader "Hidden/KageRP/PointLight"
                 float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z) * sceneDepth;
 
                 half3 normalVS;
-                normalVS.xy = gBuffer1.xy * 2.0h - 1.0h;
+                normalVS.xy = gBuffer2.xy * 2.0h - 1.0h;
                 normalVS.z = sqrt(max(0.00001f, 1.0f - dot(normalVS.xy, normalVS.xy)));
 
                 Light light;
@@ -106,12 +106,12 @@ Shader "Hidden/KageRP/PointLight"
 
                 BRDFData data;
                 {
-                    data.albedo = gBuffer2.rgb;
+                    data.albedo = gBuffer1.rgb;
                     data.metallic = gBuffer1.z;
-                    data.roughness = gBuffer1.w;
+                    data.roughness = gBuffer2.w;
                     data.occlusion = gBuffer2.a;
                     data.normalWS = normalVS; // NOTE: All computation made in ViewSpace!
-                    data.viewDirectionWS = -normalize(scenePositionVS);
+                    data.viewDirectionWS = -SafeNormalize(scenePositionVS);
 
                     data.shadowCoord = 0.0h;
                     data.bakedGI = 0.0h;

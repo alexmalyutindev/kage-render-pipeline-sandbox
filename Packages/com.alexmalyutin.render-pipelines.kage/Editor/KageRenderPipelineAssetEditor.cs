@@ -40,6 +40,9 @@ namespace Rendering.KageRP.Editor
             serializedObject.Update();
             DrawPropertiesExcluding(serializedObject, "Passes");
             GUILayout.Space(10);
+
+            if (GUILayout.Button("Save Asset")) AssetDatabase.SaveAssetIfDirty(target);
+
             _passesList.DoLayoutList();
             serializedObject.ApplyModifiedProperties();
         }
@@ -87,7 +90,7 @@ namespace Rendering.KageRP.Editor
             {
                 var iconSize = InnerElementHeight + 2;
                 Rect iconRect = new Rect(
-                    rect.xMax - iconSize - 3, 
+                    rect.xMax - iconSize - 3,
                     rect.y + Padding,
                     iconSize,
                     iconSize

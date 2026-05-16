@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.AssetImporters;
-using UnityEditor.Rendering;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Rendering.KageRP.Editor
 {

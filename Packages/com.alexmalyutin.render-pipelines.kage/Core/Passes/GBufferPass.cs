@@ -21,6 +21,7 @@ namespace Rendering.KageRP
 
             public Matrix4x4 View;
             public Matrix4x4 Proj;
+            public bool MainLightShadowOn;
         }
 
         // Forward + SlimGBuffer
@@ -95,6 +96,11 @@ namespace Rendering.KageRP
             if (lightingData.MainLightShadowMap.IsValid())
             {
                 builder.UseTexture(lightingData.MainLightShadowMap);
+                passData.MainLightShadowOn = true;
+            }
+            else
+            {
+                passData.MainLightShadowOn = false;
             }
 
             builder.SetRenderAttachment(passData.GBuffer0, 0);
@@ -109,6 +115,9 @@ namespace Rendering.KageRP
 
             builder.SetRenderFunc<GBufferPassData>(static (data, context) =>
             {
+                if (data.MainLightShadowOn) context.cmd.EnableShaderKeyword("MAIN_LIGHT_SHADOW_ON");
+                else context.cmd.DisableShaderKeyword("MAIN_LIGHT_SHADOW_ON");
+
                 context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
                 context.cmd.DrawRendererList(data.List);
             });

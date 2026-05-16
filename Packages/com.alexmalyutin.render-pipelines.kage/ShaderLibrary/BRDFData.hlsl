@@ -10,7 +10,7 @@ struct BRDFData
     half3 emission;
     // TODO: Are thies properties part of BRDF data?
     half3 normalWS;
-    half3 viewDirectionWS;
+    half3 viewDirectionWS; // Vector from surface to camera
     half4 shadowCoord;
     half3 bakedGI;
 };

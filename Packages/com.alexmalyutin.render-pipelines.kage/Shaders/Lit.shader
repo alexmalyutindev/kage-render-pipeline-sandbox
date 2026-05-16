@@ -44,9 +44,10 @@ Shader "KageRP/Lit"
             #pragma vertex Vertex
             #pragma fragment Fragment
 
+            #pragma multi_compile_fragment _ MAIN_LIGHT_SHADOW_ON
+
             #define OPTIMIZATION
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
-
 
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
@@ -110,12 +111,13 @@ Shader "KageRP/Lit"
                 data.metallic = metallic * _Metallic;
                 data.roughness = roughness * _Roughness;
                 data.occlusion = occlusion;
-                data.viewDirectionWS = normalize(input.positionWS - _WorldSpaceCameraPos);
+                data.viewDirectionWS = normalize(_WorldSpaceCameraPos - input.positionWS);
                 data.bakedGI = SampleGI(normalWS);
                 data.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 data.emission = 0.0h;
 
                 half3 color = MobilePBR(data);
+                // color = _MainLightPosition.xyz;
                 return OutputGBuffer(color, data);
             }
             ENDHLSL
