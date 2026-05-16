@@ -27,11 +27,11 @@ Shader "Hidden/KageRP/PointLight"
 
             Name "PointLight"
 
-            // NOTE: If stencil is in use.
+            // TODO: Add stencil prepass
             // Stencil
             // {
             //     Ref 1
-            //     Comp Equal // only light pixels marked by prepass
+            //     Comp Equal
             // }
 
             Blend One One
@@ -141,8 +141,8 @@ Shader "Hidden/KageRP/PointLight"
 
             Blend Off
             ColorMask 0
-            ZTest Greater
-            Cull Front
+            ZTest LEqual
+            Cull Back
             ZWrite Off
 
             HLSLPROGRAM

@@ -20,6 +20,11 @@ namespace Rendering.KageRP
             if (!frameData.Contains<GBufferData>()) return;
 
             var cameraData = frameData.Get<CameraData>();
+            if (cameraData.Camera.cameraType == CameraType.Preview)
+            {
+                return;
+            }
+
             var gBufferData = frameData.Get<GBufferData>();
 
             using var builder = renderGraph.AddRasterRenderPass("Skybox", out SkyBoxPassData passData);

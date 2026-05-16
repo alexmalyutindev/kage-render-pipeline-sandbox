@@ -10,6 +10,7 @@ namespace Rendering.KageRP
     public class GBufferPass : AbstractRenderGraphPass
     {
         private readonly FilteringSettings _filteringSettings;
+        public readonly MSAASamples MSAASamples = MSAASamples.None;
 
         public GBufferPass()
         {
@@ -52,13 +53,14 @@ namespace Rendering.KageRP
             {
                 name = "GBuffer0",
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
-                msaaSamples = MSAASamples.None,
+                msaaSamples = MSAASamples,
             };
             passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);
 
             var rgba32Desc = new TextureDesc(targetDesc.width, targetDesc.height)
             {
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
+                msaaSamples = MSAASamples
             };
 
             rgba32Desc.name = "GBuffer1";
@@ -72,7 +74,7 @@ namespace Rendering.KageRP
                 name = "GBuffer_Depth",
                 format = GraphicsFormat.D24_UNorm_S8_UInt,
                 depthBufferBits = DepthBits.Depth24,
-                msaaSamples = MSAASamples.None,
+                msaaSamples = MSAASamples,
                 clearBuffer = true,
             };
             passData.Depth = renderGraph.CreateTexture(depthDesc);

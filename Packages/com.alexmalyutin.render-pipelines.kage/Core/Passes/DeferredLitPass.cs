@@ -57,6 +57,7 @@ namespace Rendering.KageRP
             passData.PointLightsCount = deferredLightData.PointLightsCount;
             passData.PointLights = deferredLightData.PointLights;
 
+            builder.SetRenderAttachment(gBufferData.GBuffer0, 0);
             builder.SetRenderAttachmentDepth(gBufferData.Depth, AccessFlags.ReadWrite);
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
@@ -69,8 +70,12 @@ namespace Rendering.KageRP
             });
         }
 
-        private void DrawLights(RenderGraph renderGraph, GBufferData gBufferData, CameraData cameraData,
-            DeferredLightData deferredLightData)
+        private void DrawLights(
+            RenderGraph renderGraph, 
+            GBufferData gBufferData, 
+            CameraData cameraData,
+            DeferredLightData deferredLightData
+        )
         {
             using var builder = renderGraph.AddRasterRenderPass<PassData>("DeferredLit", out var passData);
             builder.AllowPassCulling(false);
