@@ -51,7 +51,7 @@ namespace Rendering.KageRP
                 if (camera.cameraType is CameraType.Game)
                 {
                     // TODO: Make interface to insert custom setup logic
-                    DynamicGI.UpdateEnvironment();
+                    // DynamicGI.UpdateEnvironment();
                 }
 
                 try
