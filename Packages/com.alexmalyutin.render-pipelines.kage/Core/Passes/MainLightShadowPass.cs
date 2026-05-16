@@ -13,7 +13,8 @@ namespace Rendering.KageRP
         private static readonly int MainLightShadowMapID = Shader.PropertyToID("_MainLightShadowMap");
 
         public ShadowMapResolution Resolution = ShadowMapResolution._512;
-        public float ShadowDistance = 10.0f;
+        public DepthBits DepthBits = DepthBits.Depth8;
+        [Min(0.01f)] public float ShadowDistance = 10.0f;
 
         private class PassData
         {
@@ -118,9 +119,8 @@ namespace Rendering.KageRP
             {
                 name = "MainLightShadowMap",
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.Shadowmap, false),
-                depthBufferBits = DepthBits.Depth16,
+                depthBufferBits = DepthBits,
                 filterMode = FilterMode.Bilinear,
-                msaaSamples = MSAASamples.None,
                 isShadowMap = true,
                 clearBuffer = true,
             };

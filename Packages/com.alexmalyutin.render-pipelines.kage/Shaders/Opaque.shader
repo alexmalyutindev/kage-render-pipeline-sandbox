@@ -1,4 +1,4 @@
-Shader "KageRP/Lit"
+Shader "KageRP/Opaque"
 {
     Properties
     {
@@ -18,6 +18,7 @@ Shader "KageRP/Lit"
         Tags
         {
             "RenderType"="Opaque"
+            "Queue" = "Geometry"
         }
         LOD 100
 

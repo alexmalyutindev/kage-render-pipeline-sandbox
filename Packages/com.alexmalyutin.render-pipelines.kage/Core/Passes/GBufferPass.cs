@@ -9,6 +9,15 @@ namespace Rendering.KageRP
     [Serializable]
     public class GBufferPass : AbstractRenderGraphPass
     {
+        private readonly FilteringSettings _filteringSettings;
+
+        public GBufferPass()
+        {
+            // BUG: Ctor won't called on settings change! Creation will happens once! 
+            _filteringSettings = FilteringSettings.defaultValue;
+            _filteringSettings.renderQueueRange = RenderQueueRange.opaque;
+        }
+
         private class GBufferPassData
         {
             // NOTE: Total 32 * 3 + 16 = 128 - 16
@@ -32,7 +41,7 @@ namespace Rendering.KageRP
             var lightingData = frameData.Get<LightingData>();
             var gBufferData = frameData.Create<GBufferData>();
 
-            using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("GBuffer", out var passData);
+            using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward GBuffer", out var passData);
 
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
@@ -82,11 +91,12 @@ namespace Rendering.KageRP
                     // | PerObjectData.ReflectionProbeData
                     // | PerObjectData.LightProbe,
             };
+
             var rendererListDesc = new RendererListParams()
             {
                 cullingResults = cullingResultData.CullingResult,
                 drawSettings = drawingSettings,
-                filteringSettings = FilteringSettings.defaultValue,
+                filteringSettings = _filteringSettings,
             };
             passData.List = renderGraph.CreateRendererList(rendererListDesc);
             builder.UseRendererList(passData.List);

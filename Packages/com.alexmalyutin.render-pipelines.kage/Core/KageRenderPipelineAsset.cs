@@ -8,6 +8,7 @@ namespace Rendering.KageRP
     public class KageRenderPipelineAsset : RenderPipelineAsset<KageRenderPipeline>
     {
         public KageRenderPipelineDefaultResources DefaultResources;
+        public bool UseSRPBatcher = true;
 
         [SerializeReference] 
         public List<AbstractRenderGraphPass> Passes = new()
@@ -22,7 +23,7 @@ namespace Rendering.KageRP
 
         protected override RenderPipeline CreatePipeline()
         {
-            GraphicsSettings.useScriptableRenderPipelineBatching = true;
+            GraphicsSettings.useScriptableRenderPipelineBatching = UseSRPBatcher;
             return new KageRenderPipeline(this);
         }
     }

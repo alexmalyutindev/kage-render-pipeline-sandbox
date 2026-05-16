@@ -17,7 +17,7 @@ namespace Rendering.KageRP.Editor
             // Debug.Log(string.Join(", ", textureNames));
 
             // TODO: Make proper description read!
-            material.shader = Shader.Find("KageRP/Lit");
+            material.shader = Shader.Find("KageRP/Opaque");
             if (description.TryGetProperty("NormalMap", out TexturePropertyDescription texturePropertyDescription))
             {
                 material.SetTexture("_NormalMap", texturePropertyDescription.texture);

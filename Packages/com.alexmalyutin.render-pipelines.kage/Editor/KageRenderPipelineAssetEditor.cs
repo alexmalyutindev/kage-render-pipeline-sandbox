@@ -9,6 +9,7 @@ namespace Rendering.KageRP.Editor
     public class KageRenderPipelineAssetEditor : UnityEditor.Editor
     {
         private const float Padding = 2;
+        private const float HorizontalPadding = 3;
         private const float HalfPadding = Padding * 0.5f;
         private static readonly float ElementHeight = EditorGUIUtility.singleLineHeight + 4;
         private static readonly float InnerElementHeight = EditorGUIUtility.singleLineHeight;
@@ -77,11 +78,22 @@ namespace Rendering.KageRP.Editor
                 EditorStyles.helpBox.Draw(boxRect, false, false, false, false);
             }
 
+            using (var scope = new EditorGUI.ChangeCheckScope())
+            {
+                var activeRect = rect;
+                activeRect.x += HorizontalPadding;
+                activeRect.width = InnerElementHeight;
+                activeRect.height = ElementHeight + 2;
+                var active = GUI.Toggle(activeRect, pass.IsActive, GUIContent.none);
+                if (scope.changed) pass.IsActive = active;
+            }
+
             Type type = pass.GetType();
 
             var propRect = rect;
-            propRect.x += 18;
-            propRect.width -= 22;
+            const int offset = 32;
+            propRect.x += offset;
+            propRect.width -= offset + 4;
             propRect.y += Padding;
             propRect.height -= Padding;
             EditorGUI.PropertyField(propRect, element, new GUIContent(type.Name), true);
@@ -90,7 +102,7 @@ namespace Rendering.KageRP.Editor
             {
                 var iconSize = InnerElementHeight + 2;
                 Rect iconRect = new Rect(
-                    rect.xMax - iconSize - 3,
+                    rect.xMax - iconSize - HorizontalPadding,
                     rect.y + Padding,
                     iconSize,
                     iconSize

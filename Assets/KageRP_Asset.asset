@@ -13,11 +13,14 @@ MonoBehaviour:
   m_Name: KageRP_Asset
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.MyRenderPipelineAsset
   DefaultResources: {fileID: 11400000, guid: 25f867cbf95604cb980b2f5428e9b14f, type: 2}
+  UseSRPBatcher: 1
   Passes:
   - rid: 6020882026761289779
   - rid: 6020882026761289780
   - rid: 6020882026761289781
+  - rid: 6020882062693892159
   - rid: 6020882026761289782
+  - rid: 6020882062693892158
   - rid: 6020882026761289783
   references:
     version: 2
@@ -25,17 +28,31 @@ MonoBehaviour:
     - rid: 6020882026761289779
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
+        IsActive: 1
         Resolution: 256
+        DepthBits: 8
         ShadowDistance: 10
     - rid: 6020882026761289780
       type: {class: GBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data: 
+      data:
+        IsActive: 1
     - rid: 6020882026761289781
       type: {class: DeferredLitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data: 
+      data:
+        IsActive: 1
     - rid: 6020882026761289782
       type: {class: SkyboxPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data: 
+      data:
+        IsActive: 1
     - rid: 6020882026761289783
       type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data: 
+      data:
+        IsActive: 1
+    - rid: 6020882062693892158
+      type: {class: ForwardTransparentPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1
+    - rid: 6020882062693892159
+      type: {class: ForwardOpaquePass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1
