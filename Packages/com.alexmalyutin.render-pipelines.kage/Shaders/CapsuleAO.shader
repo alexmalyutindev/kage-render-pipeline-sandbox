@@ -9,7 +9,7 @@ Shader "KageRP/CapsuleAO"
         Tags
         {
             "RenderType"="Transparent"
-            "Queue" = "Transparent"
+            "Queue" = "Transparent-10"
         }
         LOD 100
 
@@ -21,6 +21,12 @@ Shader "KageRP/CapsuleAO"
             }
 
             Name "ForwardLit"
+
+            Stencil
+            {
+                Ref 1
+                Comp NotEqual
+            }
 
             Cull Front
             ZWrite Off
@@ -34,7 +40,7 @@ Shader "KageRP/CapsuleAO"
 
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
 
-            CBUFFER_START(UnityPerMatrial)
+            CBUFFER_START(UnityPerMaterial)
                 float _Intensity;
             CBUFFER_END
 

@@ -18,8 +18,10 @@ Shader "KageRP/Opaque"
         [SingleLineTex(_OCCLUSION_MAP)] _OcclusionMap ("Occlusion Map", 2D) = "white" {}
 
         [Space]
+        _Parallax("Parallax", Range(0.0, 0.08)) = 0.04
         [SingleLineTex(_HEIGHT_MAP)] _HeightMap ("_HeightMap", 2D) = "black" {}
-
+        
+        _StencilBit("_StencilBit", Integer) = 0
         [HideInInspector][NonModifiableTextureData] _BRDF_LUT("_BRDF_LUT", 2D) = "black" {}
     }
     SubShader
@@ -41,6 +43,7 @@ Shader "KageRP/Opaque"
             float _Metallic;
             float _Roughness;
             float _NormalScale;
+            float _Parallax;
         CBUFFER_END
         ENDHLSL
 
@@ -52,6 +55,13 @@ Shader "KageRP/Opaque"
             }
 
             Name "GBuffer"
+            
+            Stencil
+            {
+                Ref [_StencilBit] // 0000_0001
+                Comp Always
+                Pass Replace
+            }
 
             HLSLPROGRAM
             #pragma vertex Vertex
@@ -117,10 +127,10 @@ Shader "KageRP/Opaque"
 
                 #if defined(_HEIGHT_MAP)
                 half3 viewDirectionTS = TransformWorldToTangent(viewDirectionWS, tbn);
-                ApplyPerPixelDisplacement(_HeightMap, sampler_HeightMap, viewDirectionTS, 0.08h, input.uv);
+                ApplyPerPixelDisplacement(_HeightMap, sampler_HeightMap, viewDirectionTS, _Parallax, input.uv);
                 #endif
 
-                half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                half4 albedoAlpha = SAMPLE_TEXTURE2D_LOD(_BaseMap, sampler_BaseMap, input.uv, 0);
                 albedoAlpha *= _BaseColor;
                 clip(albedoAlpha.a - 0.5h);
 

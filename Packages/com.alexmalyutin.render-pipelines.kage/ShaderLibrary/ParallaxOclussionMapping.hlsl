@@ -1,13 +1,14 @@
 #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
 
-#define PARALLAX_BIAS 0.99
 #define PARALLAX_OFFSET_LIMITING
+#define PARALLAX_RAYMARCHING_STEPS 4
 #define PARALLAX_RAYMARCHING_INTERPOLATE
 // #define PARALLAX_RAYMARCHING_SEARCH_STEPS 3
 
-float SampleHeight(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2 uv)
+half SampleHeight(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2 uv, float4 grad)
 {
-    return SAMPLE_TEXTURE2D_LOD(heightMap, sampler_heightMap, uv, 0).r;
+    // TODO: Use grad sampling!
+    return SAMPLE_TEXTURE2D_GRAD(heightMap, sampler_heightMap, uv, grad.xy, grad.zw).r;
 }
 
 float2 ParallaxRaymarching(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2 viewDir, float scale, float2 uv)
@@ -16,16 +17,20 @@ float2 ParallaxRaymarching(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2
     #define PARALLAX_RAYMARCHING_STEPS 6
     #endif
 
-    float2 uvOffset = 0;
-    float stepSize = 1.0f / PARALLAX_RAYMARCHING_STEPS;
-    float2 uvDelta = viewDir * (stepSize * scale);
+    float4 grad;
+    grad.xy = ddx(uv);
+    grad.zw = ddy(uv);
 
-    float stepHeight = 1;
-    float surfaceHeight = SampleHeight(heightMap, sampler_heightMap, uv);
+    half2 uvOffset = 0;
+    half stepSize = 1.0f / PARALLAX_RAYMARCHING_STEPS;
+    half2 uvDelta = viewDir * (stepSize * scale);
 
-    float2 prevUVOffset = uvOffset;
-    float prevStepHeight = stepHeight;
-    float prevSurfaceHeight = surfaceHeight;
+    half stepHeight = 1.0h;
+    half surfaceHeight = SampleHeight(heightMap, sampler_heightMap, uv, grad);
+
+    half2 prevUVOffset = uvOffset;
+    half prevStepHeight = stepHeight;
+    half prevSurfaceHeight = surfaceHeight;
 
     for (int i = 1; i < PARALLAX_RAYMARCHING_STEPS && stepHeight > surfaceHeight; i++)
     {
@@ -35,7 +40,7 @@ float2 ParallaxRaymarching(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2
 
         uvOffset -= uvDelta;
         stepHeight -= stepSize;
-        surfaceHeight = SampleHeight(heightMap, sampler_heightMap, uv + uvOffset);
+        surfaceHeight = SampleHeight(heightMap, sampler_heightMap, uv + uvOffset, grad);
     }
 
     #if !defined(PARALLAX_RAYMARCHING_SEARCH_STEPS)
@@ -43,24 +48,27 @@ float2 ParallaxRaymarching(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2
     #endif
 
     #if PARALLAX_RAYMARCHING_SEARCH_STEPS > 0
-    for (int i0 = 0; i0 < PARALLAX_RAYMARCHING_SEARCH_STEPS; i0++) {
+    for (int i0 = 0; i0 < PARALLAX_RAYMARCHING_SEARCH_STEPS; i0++)
+    {
         uvDelta *= 0.5;
         stepSize *= 0.5;
 
-        if (stepHeight < surfaceHeight) {
+        if (stepHeight < surfaceHeight)
+        {
             uvOffset += uvDelta;
             stepHeight += stepSize;
         }
-        else {
+        else
+        {
             uvOffset -= uvDelta;
             stepHeight -= stepSize;
         }
         surfaceHeight = SampleHeight(heightMap, sampler_heightMap, uv + uvOffset);
     }
     #elif defined(PARALLAX_RAYMARCHING_INTERPOLATE)
-    float prevDifference = prevStepHeight - prevSurfaceHeight;
-    float difference = max(0.01, surfaceHeight - stepHeight);
-    float t = prevDifference / (prevDifference + difference);
+    half prevDifference = prevStepHeight - prevSurfaceHeight;
+    half difference = max(0.0001, surfaceHeight - stepHeight);
+    half t = prevDifference / (prevDifference + difference);
     uvOffset = prevUVOffset - uvDelta * t;
     #endif
 
@@ -74,7 +82,7 @@ float2 ParallaxRaymarching(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2
 
         real delta;
         real2 offset;
-    
+
         for (int i = 0; i < 3; ++i)
         {
             // intersectionHeight is the height [0..1] for the intersection between view ray and heightfield line
@@ -107,11 +115,13 @@ float2 ParallaxRaymarching(TEXTURE2D_PARAM(heightMap, sampler_heightMap), float2
     return uvOffset;
 }
 
-void ApplyPerPixelDisplacement(TEXTURE2D_PARAM(heightMap, sampler_heightMap), half3 normalizedViewDirTS, float scale, inout float2 uv)
+void ApplyPerPixelDisplacement(
+    TEXTURE2D_PARAM(heightMap, sampler_heightMap), half3 normalizedViewDirTS, float scale, inout float2 uv)
 {
     #if !defined(PARALLAX_BIAS)
-    #define PARALLAX_BIAS 0.42
+    #define PARALLAX_BIAS 0.2
     #endif
     normalizedViewDirTS.xy /= normalizedViewDirTS.z + PARALLAX_BIAS;
-    uv += ParallaxRaymarching(heightMap, sampler_heightMap, normalizedViewDirTS.xy, scale, uv);
+    float2 uvOffset = ParallaxRaymarching(heightMap, sampler_heightMap, normalizedViewDirTS.xy, scale, uv);
+    uv += uvOffset;
 }

@@ -14,7 +14,8 @@ Material:
   m_ValidKeywords:
   - _HEIGHT_MAP
   - _OCCLUSION_MAP
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -99,7 +100,7 @@ Material:
     - _Mode: 0
     - _NormalScale: 1
     - _OcclusionStrength: 1
-    - _Parallax: 0.02
+    - _Parallax: 0.036
     - _Roughness: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

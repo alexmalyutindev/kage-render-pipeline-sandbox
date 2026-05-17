@@ -19,28 +19,29 @@ namespace Rendering.KageRP.Editor
             _isKeywordEmpty = string.IsNullOrEmpty(_keyword);
         }
 
-        public override void Apply(MaterialProperty prop)
-        {
-            
-        }
-
         public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
         {
-            if (!_isKeywordEmpty)
-            {
-                EditorGUI.BeginChangeCheck();
-            }
-
             editor.TexturePropertySingleLine(label, prop);
 
-            if (!_isKeywordEmpty && EditorGUI.EndChangeCheck())
+            if (!_isKeywordEmpty)
             {
-                foreach (Material mat in prop.targets)
+                ApplyKeyword(prop, _keyword);
+            }
+        }
+
+        private static void ApplyKeyword(MaterialProperty prop, string keyword)
+        {
+            foreach (var target in prop.targets)
+            {
+                if (target is not Material material) continue;
+
+                if (prop.textureValue != null)
                 {
-                    if (prop.textureValue != null)
-                        mat.EnableKeyword(_keyword);
-                    else
-                        mat.DisableKeyword(_keyword);
+                    material.EnableKeyword(keyword);
+                }
+                else
+                {
+                    material.DisableKeyword(keyword);
                 }
             }
         }

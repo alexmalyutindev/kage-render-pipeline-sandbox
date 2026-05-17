@@ -40,7 +40,11 @@ namespace Rendering.KageRP
             passData.Proj = cameraData.Camera.projectionMatrix;
 
             var shaderPassName = new ShaderTagId("ForwardLit");
-            var drawingSettings = new DrawingSettings(shaderPassName, new SortingSettings(cameraData.Camera))
+            var sortingSettings = new SortingSettings(cameraData.Camera)
+            {
+                criteria = SortingCriteria.CommonTransparent
+            };
+            var drawingSettings = new DrawingSettings(shaderPassName, sortingSettings)
             {
                 mainLightIndex = lightingData.MainLightIndex,
                 perObjectData = PerObjectData.LightData
