@@ -18,9 +18,9 @@ MonoBehaviour:
   - rid: 6020882026761289779
   - rid: 6020882026761289780
   - rid: 6020882026761289781
-  - rid: 6020882062693892159
   - rid: 6020882026761289782
   - rid: 6020882062693892158
+  - rid: 6020882062693892159
   - rid: 6020882026761289783
   references:
     version: 2
@@ -29,9 +29,9 @@ MonoBehaviour:
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        Resolution: 256
+        Resolution: 1024
         DepthBits: 8
-        ShadowDistance: 15
+        ShadowDistance: 30
     - rid: 6020882026761289780
       type: {class: GBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:

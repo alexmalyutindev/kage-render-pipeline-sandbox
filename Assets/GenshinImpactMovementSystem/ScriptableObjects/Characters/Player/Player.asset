@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Player
   m_EditorClassIdentifier: 
   <GroundedData>k__BackingField:
-    <BaseSpeed>k__BackingField: 5
+    <BaseSpeed>k__BackingField: 3.5
     <GroundToFallRayDistance>k__BackingField: 1
     <SlopeSpeedAngles>k__BackingField:
       serializedVersion: 2

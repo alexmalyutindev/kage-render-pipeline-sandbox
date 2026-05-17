@@ -236,6 +236,17 @@ namespace GenshinImpactMovementSystem
                 },
                 {
                     ""name"": """",
+                    ""id"": ""404744b3-469d-4625-8da1-c5af621dcce3"",
+                    ""path"": ""<Gamepad>/leftStick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""9043b894-bb7e-4cbf-a7b6-4d046c01d04e"",
                     ""path"": ""<Mouse>/delta"",
                     ""interactions"": """",
