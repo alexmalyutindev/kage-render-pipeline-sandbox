@@ -3,7 +3,7 @@ Shader "KageRP/Transparent"
     Properties
     {
         [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2
-        
+
         _BaseColor("Color", Color) = (1, 1, 1, 1)
         _BaseMap ("Albedo", 2D) = "white" {}
         [SingleLineTex] _MetallicMap ("_MetallicMap", 2D) = "white" {}
@@ -24,6 +24,8 @@ Shader "KageRP/Transparent"
             "Queue" = "Transparent"
         }
         LOD 100
+
+        Cull [_CullMode]
 
         HLSLINCLUDE
         #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
@@ -108,8 +110,7 @@ Shader "KageRP/Transparent"
 
                 half metallic = SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, input.uv).x;
                 half roughness = SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, input.uv).x;
-                half3 normalTS = UnpackNormalScale(
-                    SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
+                half3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
                 half occlusion = SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).x;
 
                 half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);

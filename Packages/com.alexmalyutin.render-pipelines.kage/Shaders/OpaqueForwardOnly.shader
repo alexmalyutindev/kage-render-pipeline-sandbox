@@ -1,4 +1,4 @@
-Shader "KageRP/Opaque"
+Shader "KageRP/OpaqueForwardOnly"
 {
     Properties
     {
@@ -42,10 +42,12 @@ Shader "KageRP/Opaque"
         {
             Tags
             {
-                "LightMode" = "GBuffer"
+                "LightMode" = "ForwardLit"
             }
 
-            Name "GBuffer"
+            Name "ForwardLit"
+            ZWrite On
+            Blend One Zero
 
             HLSLPROGRAM
             #pragma vertex Vertex
@@ -99,11 +101,11 @@ Shader "KageRP/Opaque"
                 return output;
             }
 
-            GBuffer Fragment(Varyings input)
+            half4 Fragment(Varyings input) : SV_Target
             {
                 half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 albedoAlpha *= _BaseColor;
-                clip(albedoAlpha.a - 0.5h);
+                clip(albedoAlpha.a - 0.5h); // TODO: Add kw!!
 
                 half metallic = SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, input.uv).x;
                 half roughness = SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, input.uv).x;
@@ -125,8 +127,7 @@ Shader "KageRP/Opaque"
                 data.emission = 0.0h;
 
                 half3 color = MobilePBR(data);
-                // color = _MainLightPosition.xyz;
-                return OutputGBuffer(color, data);
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

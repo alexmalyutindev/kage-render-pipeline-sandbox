@@ -59,7 +59,7 @@ namespace Rendering.KageRP
             builder.UseRendererList(passData.List);
 
             builder.SetRenderAttachment(gBufferData.GBuffer0, 0, AccessFlags.Write);
-            builder.SetRenderAttachmentDepth(gBufferData.Depth, AccessFlags.Read);
+            builder.SetRenderAttachmentDepth(gBufferData.Depth, AccessFlags.Write);
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 context.cmd.SetViewProjectionMatrices(data.View, data.Proj);

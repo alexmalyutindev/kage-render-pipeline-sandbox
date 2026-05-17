@@ -77,7 +77,7 @@ Shader "KageRP/CapsuleAO"
                 float3 positionOS = TransformWorldToObject(TransformViewToWorld(positionVS));
                 positionOS.y += 0.5f;
                 half occlusion = saturate(2.0h * sdVerticalCapsule(positionOS, 1.0h, 0.0h));
-                return lerp(1.0h, occlusion * occlusion, _Intensity);
+                return lerp(1.0h, occlusion, _Intensity);
             }
             ENDHLSL
         }
