@@ -24,8 +24,8 @@ namespace Rendering.KageRP
             // NOTE: Total 32 * 3 + 16 = 128 - 16
             public TextureHandle GBuffer0; // 32 bit <- [ ForwardLit + Emission ] (RGB32) <- Final HDR target
             public TextureHandle GBuffer1; // 32 bit <- [ NormalVS.xy | Metallic | Smoothness ] (R8G8B8A8)
-            public TextureHandle GBuffer2; // 32 bit <- [ Albedo.rgb  | AO ] Color can be HDR
-            public TextureHandle Depth; // 16 bit
+            public TextureHandle GBuffer2; // 32 bit <- [ Albedo.rgb  | AO ] (R8G8B8A8)
+            public TextureHandle Depth; // 32 bit <- [ Depth24 | Stencil8 ] 
 
             public RendererListHandle List;
 

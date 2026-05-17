@@ -2,7 +2,10 @@ Shader "KageRP/Opaque"
 {
     Properties
     {
-        _MainTex ("Albedo", 2D) = "white" {}
+        [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2
+
+        [MainColor] _BaseColor("Color", Color) = (1, 1, 1, 1)
+        [MainTexture] _BaseMap ("Albedo", 2D) = "white" {}
         [SingleLineTex] _MetallicMap ("_MetallicMap", 2D) = "white" {}
         [SingleLineTex] _RoughnessMap ("_RoughnessMap", 2D) = "white" {}
         [SingleLineTex][Normal] _NormalMap ("_NormalMap", 2D) = "bump" {}
@@ -25,7 +28,8 @@ Shader "KageRP/Opaque"
         HLSLINCLUDE
         #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
-            float4 _MainTex_ST;
+            float4 _BaseColor;
+            float4 _BaseMap_ST;
             float _Metallic;
             float _Roughness;
             float _NormalScale;
@@ -50,8 +54,8 @@ Shader "KageRP/Opaque"
             #define OPTIMIZATION
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
 
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MetallicMap);
             SAMPLER(sampler_MetallicMap);
             TEXTURE2D(_RoughnessMap);
@@ -83,7 +87,7 @@ Shader "KageRP/Opaque"
                 Varyings output;
                 float3 positionWS = TransformObjectToWorld(input.positionOS);
 
-                output.uv = mad(input.uv, _MainTex_ST.xy, _MainTex_ST.zw);
+                output.uv = mad(input.uv, _BaseMap_ST.xy, _BaseMap_ST.zw);
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.tangentWS.xyz = TransformObjectToWorldNormal(input.tangentOS.xyz);
                 output.tangentWS.w = input.tangentOS.w * GetOddNegativeScale();
@@ -95,7 +99,8 @@ Shader "KageRP/Opaque"
 
             GBuffer Fragment(Varyings input)
             {
-                half4 albedoAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                albedoAlpha *= _BaseColor;
                 clip(albedoAlpha.a - 0.5h);
 
                 half metallic = SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, input.uv).x;
@@ -160,7 +165,7 @@ Shader "KageRP/Opaque"
             {
                 Varyings output;
 
-                output.uv = mad(input.uv, _MainTex_ST.xy, _MainTex_ST.zw);
+                output.uv = mad(input.uv, _BaseMap_ST.xy, _BaseMap_ST.zw);
 
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
                 float3 positionWS = TransformObjectToWorld(input.positionOS);

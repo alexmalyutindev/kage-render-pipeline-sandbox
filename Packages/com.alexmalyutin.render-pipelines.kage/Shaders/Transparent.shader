@@ -5,7 +5,7 @@ Shader "KageRP/Transparent"
         [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2
         
         _BaseColor("Color", Color) = (1, 1, 1, 1)
-        _MainTex ("Albedo", 2D) = "white" {}
+        _BaseMap ("Albedo", 2D) = "white" {}
         [SingleLineTex] _MetallicMap ("_MetallicMap", 2D) = "white" {}
         [SingleLineTex] _RoughnessMap ("_RoughnessMap", 2D) = "white" {}
         [SingleLineTex][Normal] _NormalMap ("_NormalMap", 2D) = "bump" {}
@@ -29,7 +29,7 @@ Shader "KageRP/Transparent"
         #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseColor;
-            float4 _MainTex_ST;
+            float4 _BaseMap_ST;
             float _Metallic;
             float _Roughness;
             float _NormalScale;
@@ -58,8 +58,8 @@ Shader "KageRP/Transparent"
             #define OPTIMIZATION
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
 
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MetallicMap);
             SAMPLER(sampler_MetallicMap);
             TEXTURE2D(_RoughnessMap);
@@ -91,7 +91,7 @@ Shader "KageRP/Transparent"
                 Varyings output;
                 float3 positionWS = TransformObjectToWorld(input.positionOS);
 
-                output.uv = mad(input.uv, _MainTex_ST.xy, _MainTex_ST.zw);
+                output.uv = mad(input.uv, _BaseMap_ST.xy, _BaseMap_ST.zw);
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.tangentWS.xyz = TransformObjectToWorldNormal(input.tangentOS.xyz);
                 output.tangentWS.w = input.tangentOS.w * GetOddNegativeScale();
@@ -103,7 +103,7 @@ Shader "KageRP/Transparent"
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                half4 albedoAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 albedoAlpha *= _BaseColor;
 
                 half metallic = SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, input.uv).x;
