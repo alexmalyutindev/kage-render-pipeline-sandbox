@@ -4,16 +4,22 @@ Shader "KageRP/Opaque"
     {
         [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2
 
-        [MainColor] _BaseColor("Color", Color) = (1, 1, 1, 1)
+        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [MainTexture] _BaseMap ("Albedo", 2D) = "white" {}
-        [SingleLineTex] _MetallicMap ("_MetallicMap", 2D) = "white" {}
-        [SingleLineTex] _RoughnessMap ("_RoughnessMap", 2D) = "white" {}
-        [SingleLineTex][Normal] _NormalMap ("_NormalMap", 2D) = "bump" {}
-        [SingleLineTex] _OcclusionMap ("_OcclusionMap", 2D) = "white" {}
 
         _NormalScale ("_NormalScale", Float) = 1.0
-        _Metallic ("_Metallic", Range(0, 1)) = 0.0
-        _Roughness ("_Roughness", Range(0, 1)) = 1.0
+        [SingleLineTex][Normal] _NormalMap ("_NormalMap", 2D) = "bump" {}
+
+        [Space]
+        _Metallic ("Metallic", Range(0, 1)) = 0.0
+        _Roughness ("Roughness", Range(0, 1)) = 1.0
+        [SingleLineTex] _MetallicMap ("Metallic Map", 2D) = "white" {}
+        [SingleLineTex] _RoughnessMap ("Roughness Map", 2D) = "white" {}
+        [SingleLineTex(_OCCLUSION_MAP)] _OcclusionMap ("Occlusion Map", 2D) = "white" {}
+
+        [Space]
+        [SingleLineTex(_HEIGHT_MAP)] _HeightMap ("_HeightMap", 2D) = "black" {}
+
         [HideInInspector][NonModifiableTextureData] _BRDF_LUT("_BRDF_LUT", 2D) = "black" {}
     }
     SubShader
@@ -52,9 +58,12 @@ Shader "KageRP/Opaque"
             #pragma fragment Fragment
 
             #pragma multi_compile_fragment _ MAIN_LIGHT_SHADOW_ON
+            #pragma shader_feature_local_fragment _HEIGHT_MAP
+            #pragma shader_feature_local_fragment _OCCLUSION_MAP
 
             #define OPTIMIZATION
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/ParallaxOclussionMapping.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -66,6 +75,8 @@ Shader "KageRP/Opaque"
             SAMPLER(sampler_NormalMap);
             TEXTURE2D(_OcclusionMap);
             SAMPLER(sampler_OcclusionMap);
+            TEXTURE2D(_HeightMap);
+            SAMPLER(sampler_HeightMap);
 
             struct Attributes
             {
@@ -101,6 +112,14 @@ Shader "KageRP/Opaque"
 
             GBuffer Fragment(Varyings input)
             {
+                half3 viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
+                half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
+
+                #if defined(_HEIGHT_MAP)
+                half3 viewDirectionTS = TransformWorldToTangent(viewDirectionWS, tbn);
+                ApplyPerPixelDisplacement(_HeightMap, sampler_HeightMap, viewDirectionTS, 0.08h, input.uv);
+                #endif
+
                 half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 albedoAlpha *= _BaseColor;
                 clip(albedoAlpha.a - 0.5h);
@@ -108,9 +127,13 @@ Shader "KageRP/Opaque"
                 half metallic = SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, input.uv).x;
                 half roughness = SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, input.uv).x;
                 half3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
-                half occlusion = SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).x;
 
-                half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
+                #if defined(_OCCLUSION_MAP)
+                half occlusion = SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).x;
+                #else
+                half occlusion = 1.0h;
+                #endif
+
                 half3 normalWS = TransformTangentToWorld(normalTS, tbn, false);
 
                 BRDFData data;
@@ -119,13 +142,12 @@ Shader "KageRP/Opaque"
                 data.metallic = metallic * _Metallic;
                 data.roughness = roughness * _Roughness;
                 data.occlusion = occlusion;
-                data.viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
+                data.viewDirectionWS = viewDirectionWS;
                 data.bakedGI = SampleGI(normalWS);
                 data.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 data.emission = 0.0h;
 
                 half3 color = MobilePBR(data);
-                // color = _MainLightPosition.xyz;
                 return OutputGBuffer(color, data);
             }
             ENDHLSL
@@ -139,7 +161,7 @@ Shader "KageRP/Opaque"
             }
 
             Name "ShadowCaster"
-            
+
             ZWrite On
             ZTest LEqual
             ColorMask 0
@@ -147,7 +169,7 @@ Shader "KageRP/Opaque"
             HLSLPROGRAM
             #pragma vertex Vertex
             #pragma fragment Fragment
-            
+
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Shadows.hlsl"
 
             struct Attributes
@@ -176,7 +198,7 @@ Shader "KageRP/Opaque"
                 );
                 return output;
             }
-            
+
             half4 Fragment(Varyings input) : SV_Target
             {
                 return 0.0h;

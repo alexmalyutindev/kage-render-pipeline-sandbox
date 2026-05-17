@@ -247,8 +247,8 @@ namespace GenshinImpactMovementSystem
                 },
                 {
                     ""name"": """",
-                    ""id"": ""9043b894-bb7e-4cbf-a7b6-4d046c01d04e"",
-                    ""path"": ""<Mouse>/delta"",
+                    ""id"": ""453cba71-9c9b-4308-833c-d8fe0fa32275"",
+                    ""path"": ""<Pointer>/delta"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
