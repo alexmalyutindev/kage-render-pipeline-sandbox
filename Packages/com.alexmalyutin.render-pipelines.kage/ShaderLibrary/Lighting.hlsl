@@ -221,7 +221,7 @@ half3 SingleLightPBR(BRDFData brdfData, Light light)
     half3 diffuse = diffuseColor * light.color * NdotL;
     half3 directLighting = max(0.0h, diffuse + specular) * brdfData.occlusion;
 
-    return directLighting * light.attenuation;
+    return directLighting * light.shadowAttenuation * light.distanceAttenuation;
 }
 
 half3 MobilePBR(BRDFData brdfData)
@@ -264,7 +264,7 @@ half3 MobilePBR(BRDFData brdfData)
     half3 diffuseIBL = (1.0h - brdfData.metallic) * brdfData.albedo * brdfData.bakedGI;
     half3 ambient = (diffuseIBL + specularIBL) * brdfData.occlusion;
 
-    return directLighting * mainLight.attenuation + ambient + brdfData.emission;
+    return directLighting * mainLight.shadowAttenuation + ambient + brdfData.emission;
 }
 
 #endif

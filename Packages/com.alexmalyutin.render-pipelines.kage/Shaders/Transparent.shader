@@ -128,6 +128,13 @@ Shader "KageRP/Transparent"
                 data.emission = 0.0h;
 
                 half3 color = MobilePBR(data);
+                
+                uint pixelLightCount = GetAdditionalLightsCount();
+                for (int i = 0; i < pixelLightCount; i++)
+                {
+                    Light light = GetAdditionalLight(i, input.positionWS);
+                    color += SingleLightPBR(data, light);
+                }
                 return half4(color, albedoAlpha.a);
             }
             ENDHLSL

@@ -2,11 +2,12 @@
     "name": "Rendering.KageRP.Core",
     "rootNamespace": "Rendering.KageRP",
     "references": [
-        "Unity.RenderPipelines.Core.Runtime"
+        "Unity.RenderPipelines.Core.Runtime",
+        "Rendering.KageRP.ShaderLibrary"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

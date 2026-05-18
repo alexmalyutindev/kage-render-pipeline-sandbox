@@ -1,0 +1,6 @@
+{
+  "name": "Rendering.KageRP.ShaderLibrary",
+  "references": [
+    "Unity.RenderPipelines.Core.Runtime"
+  ]
+}

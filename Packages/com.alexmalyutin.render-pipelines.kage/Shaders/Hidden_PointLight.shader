@@ -101,7 +101,8 @@ Shader "Hidden/KageRP/PointLight"
 
                     light.color = _LightColor;
                     light.direction = lightDirectionVS * rsqrt(distSq);
-                    light.attenuation = attenuation;
+                    light.shadowAttenuation = 1.0h;
+                    light.distanceAttenuation = attenuation;
                 }
 
                 BRDFData data;
