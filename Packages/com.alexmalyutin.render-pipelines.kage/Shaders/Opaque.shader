@@ -210,8 +210,9 @@ Shader "KageRP/Opaque"
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
                 float3 positionWS = TransformObjectToWorld(input.positionOS);
                 output.postionCS = TransformWorldToHClip(
-                    ApplyShadowBias(positionWS, normalWS, -_MainLightPosition.xyz)
+                    ApplyShadowBias(positionWS, -normalWS, -_MainLightPosition.xyz)
                 );
+                output.postionCS = ApplyShadowClamping(output.postionCS);
                 return output;
             }
 

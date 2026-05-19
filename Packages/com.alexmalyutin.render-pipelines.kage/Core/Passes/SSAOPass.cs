@@ -3,13 +3,21 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Rendering.KageRP
 {
     [Serializable]
     public class SSAOPass : AbstractRenderGraphPass
     {
+        [Serializable]
+        public class Settings
+        {
+            [Range(0.1f, 2.0f)] public float OcclusionRadius = 1.0f;
+            [Range(0.0f, 1.0f)] public float OcclusionThickness = 0.1f;
+        }
+
+        [SerializeField] private Settings _settings = new();
+
         private KageRenderPipelineDefaultResources _defaultResources;
 
         private class PassData
@@ -20,6 +28,7 @@ namespace Rendering.KageRP
             public Material Material;
             public TextureHandle OcclusionTexture;
             public TextureHandle TempTexture;
+            public Vector4 Params;
         }
 
         public override void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline)
@@ -39,6 +48,7 @@ namespace Rendering.KageRP
             builder.AllowPassCulling(false);
 
             passData.Material = _defaultResources.SSAOMaterial;
+            passData.Params = new Vector4(_settings.OcclusionRadius, _settings.OcclusionThickness);
 
             passData.Color = renderGraph.ImportTexture(prevFrameBufferData.FrameColor);
             passData.Depth = renderGraph.ImportTexture(prevFrameBufferData.FrameDepth);
@@ -64,6 +74,7 @@ namespace Rendering.KageRP
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                 cmd.SetGlobalTexture("_Depth", data.Depth);
+                cmd.SetGlobalVector("_GTAO_Params", data.Params);
                 cmd.Blit(data.Color, data.OcclusionTexture, data.Material, 1);
 
                 // Blur

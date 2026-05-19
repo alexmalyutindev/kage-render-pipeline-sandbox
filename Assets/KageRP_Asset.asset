@@ -61,3 +61,6 @@ MonoBehaviour:
       type: {class: SSAOPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
+        _settings:
+          OcclusionRadius: 1.5
+          OcclusionThickness: 0.7

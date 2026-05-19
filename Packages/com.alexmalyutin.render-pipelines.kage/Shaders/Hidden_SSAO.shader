@@ -97,8 +97,10 @@ Shader "Hidden/KageRP/SSAO"
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
 
-            #define GTAO_RADIUS 0.75h
-            #define GTAO_THICKNESS 0.1h
+            float4 _GTAO_Params;
+
+            #define GTAO_RADIUS (_GTAO_Params.x)
+            #define GTAO_THICKNESS (_GTAO_Params.y)
 
             half IntegrateArc_UniformWeight(half2 horizions)
             {
@@ -160,7 +162,7 @@ Shader "Hidden/KageRP/SSAO"
                     occlusion += saturate(IntegrateArc_UniformWeight(horizon));
                 }
 
-                return pow(saturate(occlusion * sliceCountRcp), 4.0h);
+                return Pow4(saturate(occlusion * sliceCountRcp));
             }
             ENDHLSL
         }
