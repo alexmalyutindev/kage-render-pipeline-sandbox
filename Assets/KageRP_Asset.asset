@@ -19,8 +19,8 @@ MonoBehaviour:
   - rid: 6020882026761289779
   - rid: 6020882026761289780
   - rid: 6020882026761289781
-  - rid: 6020882026761289782
   - rid: 6020882062693892159
+  - rid: 6020882026761289782
   - rid: 6020882086145032377
   - rid: 6020882026761289783
   references:
@@ -62,5 +62,5 @@ MonoBehaviour:
       data:
         IsActive: 1
         _settings:
-          OcclusionRadius: 1.5
-          OcclusionThickness: 0.7
+          OcclusionRadius: 1
+          OcclusionThickness: 0.95
