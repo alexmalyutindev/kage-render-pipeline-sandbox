@@ -57,8 +57,8 @@ namespace Rendering.KageRP
             passData.PointLightsCount = deferredLightData.PointLightsCount;
             passData.PointLights = deferredLightData.PointLights;
 
+            builder.UseTexture(gBufferData.Depth, AccessFlags.Read);
             builder.SetRenderAttachment(gBufferData.GBuffer0, 0);
-            builder.SetRenderAttachmentDepth(gBufferData.Depth, AccessFlags.ReadWrite);
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 // TODO: Camera relative rendering!
@@ -88,17 +88,18 @@ namespace Rendering.KageRP
             passData.PointLightsCount = deferredLightData.PointLightsCount;
             passData.PointLights = deferredLightData.PointLights;
 
-            builder.UseTexture(gBufferData.GBuffer1);
-            builder.UseTexture(gBufferData.GBuffer2);
+            builder.SetInputAttachment(gBufferData.GBuffer1, 0, AccessFlags.Read);
+            builder.SetInputAttachment(gBufferData.GBuffer2, 1, AccessFlags.Read);
+            builder.UseTexture(gBufferData.Depth, AccessFlags.Read);
 
-            builder.SetRenderAttachment(gBufferData.GBuffer0, 0);
-            builder.SetRenderAttachmentDepth(gBufferData.Depth, AccessFlags.Read);
+            builder.SetRenderAttachment(gBufferData.GBuffer0, 0, AccessFlags.Write);
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 // TODO: Camera relative rendering!
+                context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
+
                 for (int lightIndex = 0; lightIndex < data.PointLightsCount; lightIndex++)
                 {
-                    context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
                     var matrix = CreatePointLightData(data.PointLights[lightIndex]);
                     context.cmd.DrawMesh(data.PointLightMesh, matrix, data.PointLightMaterial, 0, 0);
                 }

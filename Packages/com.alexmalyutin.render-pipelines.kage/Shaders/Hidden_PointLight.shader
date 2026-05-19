@@ -30,12 +30,13 @@ Shader "Hidden/KageRP/PointLight"
             // TODO: Add stencil prepass
             // Stencil
             // {
-            //     Ref 1
+            //     Ref 2 // 0000_0010
+            //     ReadMask 2
             //     Comp Equal
             // }
 
             Blend One One
-            ZTest Greater
+            ZTest Off
             Cull Front
             ZWrite Off
 
@@ -46,9 +47,9 @@ Shader "Hidden/KageRP/PointLight"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
 
-            Texture2D<half4> _GBuffer1;
-            Texture2D<half4> _GBuffer2;
-            Texture2D<half> _GBuffer_Depth;
+            FRAMEBUFFER_INPUT_HALF(0); 
+            FRAMEBUFFER_INPUT_HALF(1); 
+            Texture2D<float> _GBuffer_Depth;
 
             struct Attributes
             {
@@ -58,7 +59,7 @@ Shader "Hidden/KageRP/PointLight"
             struct Varyings
             {
                 float3 positionVS : TEXCOORD0;
-                float4 postionCS : SV_POSITION;
+                float4 positionCS : SV_POSITION;
             };
 
             Varyings Vertex(Attributes input)
@@ -66,16 +67,19 @@ Shader "Hidden/KageRP/PointLight"
                 Varyings output;
                 float3 positionWS = input.positionOS * _LightRadius + _LightPositionWS;
                 output.positionVS = TransformWorldToView(positionWS);
-                output.postionCS = TransformWorldToHClip(positionWS);
+                output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
             }
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                int3 screenCoord = int3(floor(input.postionCS.xy), 0);
-                half sceneDepth = _GBuffer_Depth.Load(screenCoord).x;
-                half4 gBuffer1 = _GBuffer1.Load(screenCoord);
-                half4 gBuffer2 = _GBuffer2.Load(screenCoord);
+                half4 gBuffer1 = LOAD_FRAMEBUFFER_INPUT(0, input.positionCS);
+                half4 gBuffer2 = LOAD_FRAMEBUFFER_INPUT(1, input.positionCS);
+                half sceneDepth = _GBuffer_Depth.Load(int3(input.positionCS.xy, 0));
+                if (COMPARE_DEVICE_DEPTH_CLOSER(input.positionCS.z, sceneDepth))
+                {
+                    return 0.0h;
+                }
 
                 sceneDepth = LinearEyeDepth(sceneDepth, _ZBufferParams);
                 float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z) * sceneDepth;
@@ -127,7 +131,7 @@ Shader "Hidden/KageRP/PointLight"
                 }
 
                 BRDFData brdf = InitBRDFData(data);
-                return half4(SingleLightPBR(brdf, input_data, light) * data.occlusion, 1.0h);
+                return half4(SingleLightPBR_Opt(brdf, input_data, light) * data.occlusion, 1.0h);
             }
             ENDHLSL
         }
@@ -143,15 +147,17 @@ Shader "Hidden/KageRP/PointLight"
 
             Stencil
             {
-                Ref 1
+                Ref 2 // 0000_0010
+                ReadMask 2
+                WriteMask 2
                 Comp Always
                 Pass Replace
             }
 
             Blend Off
             ColorMask 0
-            ZTest LEqual
-            Cull Back
+            ZTest Greater
+            Cull Front
             ZWrite Off
 
             HLSLPROGRAM
@@ -160,6 +166,8 @@ Shader "Hidden/KageRP/PointLight"
 
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
 
+            Texture2D<float> _GBuffer_Depth;
+
             struct Attributes
             {
                 half3 positionOS : POSITION;
@@ -167,19 +175,21 @@ Shader "Hidden/KageRP/PointLight"
 
             struct Varyings
             {
-                float4 postionCS : SV_POSITION;
+                float4 positionCS : SV_POSITION;
             };
 
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
                 float3 positionWS = input.positionOS * _LightRadius + _LightPositionWS;
-                output.postionCS = TransformWorldToHClip(positionWS);
+                output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
             }
 
             half4 Fragment(Varyings input) : SV_Target
             {
+                half sceneDepth = _GBuffer_Depth.Load(int3(input.positionCS.xy, 0));
+                clip(sceneDepth - input.positionCS.z);
                 return 0.0h;
             }
             ENDHLSL

@@ -76,7 +76,7 @@ half3 SingleLightPBR(BRDFData brdfData, InputData inputData, Light light)
     return directLighting * light.shadowAttenuation * light.distanceAttenuation;
 }
 
-half3 SingleLightPBR2(BRDFData brdfData, InputData inputData, Light light)
+half3 SingleLightPBR_Opt(BRDFData brdfData, InputData inputData, Light light)
 {
     half3 N = inputData.normalWS;
     half3 V = inputData.viewDirectionWS;
@@ -88,8 +88,10 @@ half3 SingleLightPBR2(BRDFData brdfData, InputData inputData, Light light)
     half NdotH = max(0.0h, dot(N, H));
     half VdotH = max(0.0h, dot(V, H));  // <-- needed for K/SK
 
-    float specularPower = exp2(10.0h * (1.0h - brdfData.roughness) + 1.0h);
-    float D = pow(NdotH, specularPower);
+    // D term
+    half a2 = brdfData.roughness * brdfData.roughness;
+    half denom = (NdotH * NdotH) * (a2 - 1.0h) + 1.0h;
+    half D_GGX = a2 / (denom * denom + 1e-5h) * INV_PI;
 
     // Kelemen/Szirmay-Kalos visibility term
     // Replaces both the geometry term G and the (4 NdotL NdotV) denominator.
@@ -99,7 +101,7 @@ half3 SingleLightPBR2(BRDFData brdfData, InputData inputData, Light light)
 
     // Fresnel: Schlick
     half3 F = brdfData.F0 + (1.0h - brdfData.F0) * pow(1.0h - VdotH, 5.0h);
-    half3 specular = F * (half)D * Vis * light.color * NdotL;
+    half3 specular = F * D_GGX * Vis * light.color * NdotL;
     half3 diffuse = brdfData.diffuseColor * light.color * NdotL;
 
     half3 directLighting = max(0.0h, diffuse + specular) * brdfData.occlusion;

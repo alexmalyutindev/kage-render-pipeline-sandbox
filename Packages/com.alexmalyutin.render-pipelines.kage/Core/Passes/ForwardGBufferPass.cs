@@ -23,8 +23,8 @@ namespace Rendering.KageRP
         {
             // NOTE: Total 32 * 3 + 16 = 128 - 16
             public TextureHandle GBuffer0; // 32 bit <- [ ForwardLit + Emission ] (RGB32) <- Final HDR target
-            public TextureHandle GBuffer1; // 32 bit <- [ NormalVS.xy | Metallic | Smoothness ] (R8G8B8A8)
-            public TextureHandle GBuffer2; // 32 bit <- [ Albedo.rgb  | AO ] (R8G8B8A8)
+            public TextureHandle GBuffer1; // 32 bit <- [ Albedo.rgb  | AO ] (R8G8B8A8)
+            public TextureHandle GBuffer2; // 32 bit <- [ NormalVS.xy | Metallic | Smoothness ] (R8G8B8A8)
             public TextureHandle Depth; // 32 bit <- [ Depth24 | Stencil8 ] 
 
             public RendererListHandle List;
@@ -56,7 +56,7 @@ namespace Rendering.KageRP
             var rgbHDRDesc = new TextureDesc(targetDesc.width, targetDesc.height)
             {
                 name = "GBuffer0",
-                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
                 msaaSamples = MSAASamples,
             };
             passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);
@@ -126,8 +126,8 @@ namespace Rendering.KageRP
 
             builder.AllowGlobalStateModification(true);
             builder.SetGlobalTextureAfterPass(passData.Depth, Shader.PropertyToID("_GBuffer_Depth"));
-            builder.SetGlobalTextureAfterPass(passData.GBuffer1, Shader.PropertyToID("_GBuffer1"));
-            builder.SetGlobalTextureAfterPass(passData.GBuffer2, Shader.PropertyToID("_GBuffer2"));
+            // builder.SetGlobalTextureAfterPass(passData.GBuffer1, Shader.PropertyToID("_GBuffer1"));
+            // builder.SetGlobalTextureAfterPass(passData.GBuffer2, Shader.PropertyToID("_GBuffer2"));
 
             builder.SetRenderFunc<GBufferPassData>(static (data, context) =>
             {
