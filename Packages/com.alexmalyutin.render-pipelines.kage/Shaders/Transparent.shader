@@ -116,24 +116,31 @@ Shader "KageRP/Transparent"
                 half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
                 half3 normalWS = TransformTangentToWorld(normalTS, tbn, true);
 
-                BRDFData data;
-                data.albedo = albedoAlpha.rgb;
-                data.normalWS = normalWS;
-                data.metallic = metallic * _Metallic;
-                data.roughness = roughness * _Roughness;
-                data.occlusion = occlusion;
-                data.viewDirectionWS = normalize(_WorldSpaceCameraPos - input.positionWS);
-                data.bakedGI = SampleGI(normalWS);
-                data.shadowCoord = TransformWorldToShadowMap(input.positionWS);
-                data.emission = 0.0h;
+                InputData inputData;
+                inputData.normalWS = normalWS;
+                inputData.positionWS = input.positionWS;
+                inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
+                inputData.bakedGI = SampleGI(normalWS);
+                inputData.viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
 
-                half3 color = MobilePBR(data);
+                MaterialData materialData;
+                materialData.albedo = albedoAlpha.rgb;
+                materialData.metallic = metallic * _Metallic;
+                materialData.roughness = roughness * _Roughness;
+                materialData.occlusion = occlusion;
+                materialData.emission = 0.0h;
+                materialData.alpha = 1.0h;
+                materialData.normalTS = normalTS;
+
+                BRDFData brdf = InitBRDFData(materialData);
+
+                half3 color = MobilePBR(brdf, inputData);
                 
                 uint pixelLightCount = GetAdditionalLightsCount();
-                for (int i = 0; i < pixelLightCount; i++)
+                for (uint i = 0; i < pixelLightCount; i++)
                 {
                     Light light = GetAdditionalLight(i, input.positionWS);
-                    color += SingleLightPBR(data, light);
+                    color += SingleLightPBR(brdf, inputData, light);
                 }
                 return half4(color, albedoAlpha.a);
             }

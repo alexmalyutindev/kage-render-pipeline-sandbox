@@ -56,13 +56,13 @@ half3 SchlickFresnel(half HdotV, half3 F0)
     #endif
 }
 
-half3 MobileGI(BRDFData brdfData)
+half3 MobileGI(BRDFData brdf, InputData inputData)
 {
-    half roughness = brdfData.roughness; // saturate(1.0h - brdfData.smoothness);
-    half3 F0 = lerp(0.04h, brdfData.albedo, brdfData.metallic);
+    half roughness = brdf.roughness; // saturate(1.0h - brdfData.smoothness);
+    half3 F0 = lerp(0.04h, brdf.albedo, brdf.metallic);
 
-    half3 N = brdfData.normalWS;
-    half3 V = brdfData.viewDirectionWS;
+    half3 N = inputData.normalWS;
+    half3 V = inputData.viewDirectionWS;
     half NdotV = max(0.0h, dot(N, V));
 
     // Environment
@@ -74,8 +74,8 @@ half3 MobileGI(BRDFData brdfData)
     half3 F = SchlickFresnel(NdotV, F0);
     half3 envReflection = DecodeHDREnvironment(encodedReflection, unity_SpecCube0_HDR);
     half3 specularIBL = envReflection * (F * envBRDF.x + envBRDF.y);
-    half3 diffuseIBL = (1.0h - brdfData.metallic) * brdfData.albedo * brdfData.bakedGI;
-    half3 ambient = (diffuseIBL + specularIBL) * brdfData.occlusion;
+    half3 diffuseIBL = (1.0h - brdf.metallic) * brdf.albedo * inputData.bakedGI;
+    half3 ambient = (diffuseIBL + specularIBL) * brdf.occlusion;
 
     return ambient;
 }

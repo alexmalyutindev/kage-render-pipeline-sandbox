@@ -37,6 +37,7 @@ Shader "KageRP/Opaque"
 
         HLSLINCLUDE
         #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/GlobalSamplers.hlsl"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseColor;
             float4 _BaseMap_ST;
@@ -149,22 +150,28 @@ Shader "KageRP/Opaque"
 
                 half3 normalWS = TransformTangentToWorld(normalTS, tbn, false);
 
-                BRDFData data;
-                data.albedo = albedoAlpha.rgb;
-                data.normalWS = normalWS;
-                data.metallic = metallic * _Metallic;
-                data.roughness = roughness * _Roughness;
-                data.occlusion = occlusion;
-                data.viewDirectionWS = viewDirectionWS;
-                data.bakedGI = SampleGI(normalWS);
-                data.shadowCoord = TransformWorldToShadowMap(input.positionWS);
-                data.emission = 0.0h;
+                InputData inputData;
+                inputData.positionWS = input.positionWS;
+                inputData.normalWS = normalWS;
+                inputData.viewDirectionWS = viewDirectionWS;
+                inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
+                inputData.bakedGI = SampleGI(normalWS);
 
+                MaterialData materialData;
+                materialData.albedo = albedoAlpha.rgb;
+                materialData.metallic = metallic * _Metallic;
+                materialData.roughness = roughness * _Roughness;
+                materialData.occlusion = occlusion;
+                materialData.normalTS = normalTS;
+                materialData.alpha = 1.0h;
+                materialData.emission = 0.0h;
+                
                 half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, input.postionCS.xy * _ScreenSize.zw);
-                data.occlusion *= ssao;
+                materialData.occlusion *= ssao;
 
-                half3 color = MobilePBR(data);
-                return OutputGBuffer(color, data);
+                BRDFData brdf = InitBRDFData(materialData);
+                half3 color = MobilePBR(brdf, inputData);
+                return OutputGBuffer(color, materialData, inputData);
             }
             ENDHLSL
         }

@@ -104,22 +104,30 @@ Shader "Hidden/KageRP/PointLight"
                     light.shadowAttenuation = 1.0h;
                     light.distanceAttenuation = attenuation;
                 }
-
-                BRDFData data;
+                
+                InputData input_data;
                 {
-                    data.albedo = gBuffer1.rgb;
-                    data.metallic = gBuffer1.z;
-                    data.roughness = gBuffer2.w;
-                    data.occlusion = gBuffer1.a;
-                    data.normalWS = normalVS; // NOTE: All computation made in ViewSpace!
-                    data.viewDirectionWS = -SafeNormalize(scenePositionVS);
-
-                    data.shadowCoord = 0.0h;
-                    data.bakedGI = 0.0h;
-                    data.emission = 0.0h;
+                    // NOTE: All computation made in ViewSpace!
+                    input_data.positionWS = input.positionVS;
+                    input_data.normalWS = normalVS;
+                    input_data.viewDirectionWS = -SafeNormalize(scenePositionVS);
+                    input_data.shadowCoord = 0.0f;
+                    input_data.bakedGI = 0.0h;
                 }
 
-                return half4(SingleLightPBR(data, light) * data.occlusion, 1.0h);
+                MaterialData data;
+                {
+                    data.albedo = gBuffer1.rgb;
+                    data.occlusion = gBuffer1.a;
+                    data.metallic = gBuffer2.z;
+                    data.roughness = gBuffer2.w;
+                    data.emission = 0.0h;
+                    data.normalTS = half3(0.0h, 0.0h, 1.0h);
+                    data.alpha = 0.0h;
+                }
+
+                BRDFData brdf = InitBRDFData(data);
+                return half4(SingleLightPBR(brdf, input_data, light) * data.occlusion, 1.0h);
             }
             ENDHLSL
         }

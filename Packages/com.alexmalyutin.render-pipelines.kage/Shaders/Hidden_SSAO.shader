@@ -126,7 +126,7 @@ Shader "Hidden/KageRP/SSAO"
                 float3 viewDirectionVS = -normalize(positionVS);
 
                 const int sliceCount = 4;
-                const int stepsCount = 4;
+                const int stepsCount = 3;
                 const float sliceCountRcp = 1.0f / sliceCount;
                 const float stepsCountRcp = 1.0f / stepsCount;
 
