@@ -18,7 +18,7 @@ half4 _AdditionalLightsCount;
 #define UNITY_MATRIX_I_V unity_MatrixInvV
 
 #define UNITY_MATRIX_VP unity_MatrixVP
-#define UNITY_MATRIX_P 0
+#define UNITY_MATRIX_P unity_CameraProjection
 
 StructuredBuffer<LightData> _AdditionalLightsBuffer;
 StructuredBuffer<int> _AdditionalLightsIndices;

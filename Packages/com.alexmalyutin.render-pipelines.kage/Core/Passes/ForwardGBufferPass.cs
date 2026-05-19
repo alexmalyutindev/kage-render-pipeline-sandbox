@@ -56,7 +56,7 @@ namespace Rendering.KageRP
             var rgbHDRDesc = new TextureDesc(targetDesc.width, targetDesc.height)
             {
                 name = "GBuffer0",
-                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
                 msaaSamples = MSAASamples,
             };
             passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);

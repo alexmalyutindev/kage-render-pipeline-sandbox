@@ -14,8 +14,9 @@ Shader "Hidden/KageRP/PointLight"
 
         // TODO: Move to include
         #define _LightPositionWS (UNITY_MATRIX_M[0].xyz)
-        #define _LightRadius (UNITY_MATRIX_M._m20)
         #define _LightColor (UNITY_MATRIX_M[1].rgb)
+        #define _LightRadius (UNITY_MATRIX_M._m20)
+        #define _LightDistanceAttenuation (UNITY_MATRIX_M._m30_m31)
         ENDHLSL
 
         Pass
@@ -59,13 +60,15 @@ Shader "Hidden/KageRP/PointLight"
             struct Varyings
             {
                 float3 positionVS : TEXCOORD0;
+                float3 lightPositionVS : TEXCOORD1;
                 float4 positionCS : SV_POSITION;
             };
 
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
-                float3 positionWS = input.positionOS * _LightRadius + _LightPositionWS;
+                float3 positionWS = _LightPositionWS + input.positionOS * _LightRadius;
+                output.lightPositionVS = TransformWorldToView(_LightPositionWS);
                 output.positionVS = TransformWorldToView(positionWS);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
@@ -73,9 +76,9 @@ Shader "Hidden/KageRP/PointLight"
 
             half4 Fragment(Varyings input) : SV_Target
             {
+                half sceneDepth = _GBuffer_Depth.Load(int3(input.positionCS.xy, 0));
                 half4 gBuffer1 = LOAD_FRAMEBUFFER_INPUT(0, input.positionCS);
                 half4 gBuffer2 = LOAD_FRAMEBUFFER_INPUT(1, input.positionCS);
-                half sceneDepth = _GBuffer_Depth.Load(int3(input.positionCS.xy, 0));
                 if (COMPARE_DEVICE_DEPTH_CLOSER(input.positionCS.z, sceneDepth))
                 {
                     return 0.0h;
@@ -93,20 +96,20 @@ Shader "Hidden/KageRP/PointLight"
                     float lightRadius = _LightRadius;
                     float radiusSq = lightRadius * lightRadius;
 
-                    float3 lightPositionWS = _LightPositionWS;
-                    float3 lightPositionVS = TransformWorldToView(lightPositionWS);
+                    float3 lightPositionVS = input.lightPositionVS;
                     float3 lightDirectionVS = lightPositionVS - scenePositionVS;
-
-                    float distSq = dot(lightDirectionVS, lightDirectionVS);
-                    float attenuation = 1.0h / dot(lightDirectionVS, lightDirectionVS);
-                    float window = saturate(1.0f - (distSq / radiusSq) * (distSq / radiusSq));
-                    window *= window;
-                    attenuation *= window;
+                    
+                    float distanceSqr = dot(lightDirectionVS, lightDirectionVS);
+                    float lightAtten = rcp(distanceSqr);
+                    // NOTE: GetPunctualLightDistanceAttenuation: distanceAttenuationFloat.x
+                    half factor = half(distanceSqr * _LightDistanceAttenuation.x);
+                    half smoothFactor = saturate(half(1.0h) - factor * factor);
+                    smoothFactor = smoothFactor * smoothFactor;
 
                     light.color = _LightColor;
-                    light.direction = lightDirectionVS * rsqrt(distSq);
+                    light.direction = lightDirectionVS * rsqrt(distanceSqr);
                     light.shadowAttenuation = 1.0h;
-                    light.distanceAttenuation = attenuation;
+                    light.distanceAttenuation = lightAtten * smoothFactor;
                 }
                 
                 InputData input_data;

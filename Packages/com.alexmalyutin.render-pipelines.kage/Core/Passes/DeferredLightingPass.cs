@@ -127,14 +127,39 @@ namespace Rendering.KageRP
             };
             return deferredLightData;
         }
+        
+        internal static void GetPunctualLightDistanceAttenuation(float lightRange, ref Vector4 lightAttenuation)
+        {
+            // Light attenuation in universal matches the unity vanilla one (HINT_NICE_QUALITY).
+            // attenuation = 1.0 / distanceToLightSqr
+            // The smoothing factor makes sure that the light intensity is zero at the light range limit.
+            // (We used to offer two different smoothing factors.)
+
+            // The current smoothing factor matches the one used in the Unity lightmapper.
+            // smoothFactor = (1.0 - saturate((distanceSqr * 1.0 / lightRangeSqr)^2))^2
+            float lightRangeSqr = lightRange * lightRange;
+            float fadeStartDistanceSqr = 0.8f * 0.8f * lightRangeSqr;
+            float fadeRangeSqr = (fadeStartDistanceSqr - lightRangeSqr);
+            float lightRangeSqrOverFadeRangeSqr = -lightRangeSqr / fadeRangeSqr;
+            float oneOverLightRangeSqr = 1.0f / Mathf.Max(0.0001f, lightRangeSqr);
+
+            // On all devices: Use the smoothing factor that matches the GI.
+            lightAttenuation.x = oneOverLightRangeSqr;
+            lightAttenuation.y = lightRangeSqrOverFadeRangeSqr;
+        }
 
         private static Matrix4x4 CreatePointLightData(VisibleLight pointLight)
         {
             var position = pointLight.light.transform.position;
+            // position = viewMatrix.MultiplyPoint(position);
             var matrix = new Matrix4x4();
             matrix.SetRow(0, position);
             matrix.SetRow(1, pointLight.finalColor);
             matrix.SetRow(2, new Vector4(pointLight.range, 0.0f));
+
+            var lightAttenuation = Vector4.one;
+            GetPunctualLightDistanceAttenuation(pointLight.range, ref lightAttenuation);
+            matrix.SetRow(3, lightAttenuation);
             return matrix;
         }
     }
