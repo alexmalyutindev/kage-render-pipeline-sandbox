@@ -22,7 +22,6 @@ namespace Rendering.KageRP
 
         private class PassData
         {
-            public TextureHandle Color;
             public TextureHandle Depth;
 
             public Material Material;
@@ -42,7 +41,12 @@ namespace Rendering.KageRP
             var persistentFrameData = frameData.Get<PersistentFrameData>();
 
             if (!persistentFrameData.Context.Contains<PrevFrameBufferData>()) return;
+
             var prevFrameBufferData = persistentFrameData.Context.Get<PrevFrameBufferData>();
+            if (prevFrameBufferData.FrameDepth == null || prevFrameBufferData.FrameDepth.rt == null)
+            {
+                return;
+            }
 
             using var builder = renderGraph.AddUnsafePass<PassData>("SSAO", out var passData);
             builder.AllowPassCulling(false);
@@ -50,13 +54,11 @@ namespace Rendering.KageRP
             passData.Material = _defaultResources.SSAOMaterial;
             passData.Params = new Vector4(_settings.OcclusionRadius, _settings.OcclusionThickness);
 
-            passData.Color = renderGraph.ImportTexture(prevFrameBufferData.FrameColor);
             passData.Depth = renderGraph.ImportTexture(prevFrameBufferData.FrameDepth);
 
-            builder.UseTexture(passData.Color, AccessFlags.Read);
             builder.UseTexture(passData.Depth, AccessFlags.Read);
 
-            var frameDesc = cameraData.CameraColorDescriptor;
+            var frameDesc = cameraData.CameraBackBufferDescriptor;
             var ssgiDesc = new TextureDesc(frameDesc.width / 4, frameDesc.height / 4)
             {
                 name = "_SSAO",
@@ -75,7 +77,7 @@ namespace Rendering.KageRP
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                 cmd.SetGlobalTexture("_Depth", data.Depth);
                 cmd.SetGlobalVector("_GTAO_Params", data.Params);
-                cmd.Blit(data.Color, data.OcclusionTexture, data.Material, 1);
+                cmd.Blit(data.Depth, data.OcclusionTexture, data.Material, 1);
 
                 // Blur
                 cmd.SetGlobalVector("_Direction", new Vector4(1, 0));

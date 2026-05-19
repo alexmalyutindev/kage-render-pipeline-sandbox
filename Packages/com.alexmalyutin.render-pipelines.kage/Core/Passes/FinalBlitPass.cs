@@ -16,13 +16,12 @@ namespace Rendering.KageRP
         public override void Record(RenderGraph renderGraph, ContextContainer frameData)
         {
             var cameraData = frameData.Get<CameraData>();
-            var gBufferData = frameData.Get<GBufferData>();
 
             using var builder = renderGraph.AddUnsafePass("Blit to Backbuffer", out PassData passData);
 
             builder.AllowPassCulling(false);
 
-            passData.Source = gBufferData.GBuffer0;
+            passData.Source = cameraData.CameraActiveColor;
             builder.UseTexture(passData.Source);
 
             passData.Destination = cameraData.CameraBackBuffer;

@@ -44,24 +44,28 @@ namespace Rendering.KageRP
             var gBufferData = frameData.Create<GBufferData>();
 
             using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward+GBuffer", out var passData);
-            var targetDesc = cameraData.CameraColorDescriptor;
+            var targetDesc = cameraData.CameraBackBufferDescriptor;
+
+            var width = Mathf.RoundToInt(targetDesc.width * 0.5f);
+            var height = Mathf.RoundToInt(targetDesc.height * 0.5f);
 
             passData.ScreenSize = new Vector4(
-                targetDesc.width, targetDesc.height,
-                1.0f / targetDesc.width, 1.0f / targetDesc.height
+                width, height,
+                1.0f / width, 1.0f / height
             );
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
 
-            var rgbHDRDesc = new TextureDesc(targetDesc.width, targetDesc.height)
+            var rgbHDRDesc = new TextureDesc(width, height)
             {
                 name = "GBuffer0",
-                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
                 msaaSamples = MSAASamples,
             };
             passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);
+            cameraData.CameraActiveColor = passData.GBuffer0;
 
-            var rgba32Desc = new TextureDesc(targetDesc.width, targetDesc.height)
+            var rgba32Desc = new TextureDesc(width, height)
             {
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
                 msaaSamples = MSAASamples
@@ -73,7 +77,7 @@ namespace Rendering.KageRP
             rgba32Desc.name = "GBuffer2";
             passData.GBuffer2 = renderGraph.CreateTexture(rgba32Desc);
 
-            var depthDesc = new TextureDesc(targetDesc.width, targetDesc.height)
+            var depthDesc = new TextureDesc(width, height)
             {
                 name = "GBuffer_Depth",
                 format = GraphicsFormat.D24_UNorm_S8_UInt,

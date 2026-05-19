@@ -25,7 +25,7 @@ namespace Rendering.KageRP
             var persistentFrameData = frameData.Get<PersistentFrameData>();
             var prevFrameBufferData = persistentFrameData.Context.GetOrCreate<PrevFrameBufferData>();
 
-            var cameraColorDesc = cameraData.CameraColorDescriptor;
+            var cameraColorDesc = cameraData.CameraBackBufferDescriptor;
             var colorDesc = new RenderTextureDescriptor(
                 cameraColorDesc.width,
                 cameraColorDesc.height,

@@ -172,7 +172,7 @@ namespace Rendering.KageRP
             var cameraData = frameData.Create<CameraData>();
 
             cameraData.Camera = camera;
-            cameraData.CameraColorDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
+            cameraData.CameraBackBufferDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
             cameraData.CameraBackBuffer = renderGraph.ImportBackbuffer(
                 new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget)
             );
