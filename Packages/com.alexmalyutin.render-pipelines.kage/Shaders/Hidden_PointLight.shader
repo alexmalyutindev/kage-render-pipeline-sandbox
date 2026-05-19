@@ -110,7 +110,7 @@ Shader "Hidden/KageRP/PointLight"
                     data.albedo = gBuffer1.rgb;
                     data.metallic = gBuffer1.z;
                     data.roughness = gBuffer2.w;
-                    data.occlusion = gBuffer2.a;
+                    data.occlusion = gBuffer1.a;
                     data.normalWS = normalVS; // NOTE: All computation made in ViewSpace!
                     data.viewDirectionWS = -SafeNormalize(scenePositionVS);
 
@@ -119,7 +119,7 @@ Shader "Hidden/KageRP/PointLight"
                     data.emission = 0.0h;
                 }
 
-                return half4(SingleLightPBR(data, light), 1.0h);
+                return half4(SingleLightPBR(data, light) * data.occlusion, 1.0h);
             }
             ENDHLSL
         }

@@ -36,7 +36,7 @@ namespace Rendering.KageRP
             var depthDesc = new RenderTextureDescriptor(
                 cameraColorDesc.width,
                 cameraColorDesc.height,
-                RenderTextureFormat.R16
+                RenderTextureFormat.RHalf
             );
             KageUtils.ReAllocIfNeeded(ref prevFrameBufferData.FrameDepth, depthDesc, "_PrevFrameDepth");
 

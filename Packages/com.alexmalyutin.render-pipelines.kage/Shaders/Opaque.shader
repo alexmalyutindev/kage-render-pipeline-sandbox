@@ -75,6 +75,9 @@ Shader "KageRP/Opaque"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/ParallaxOclussionMapping.hlsl"
 
+            // TEST: Occlusion
+            Texture2D<half> _OcclusionTexture;
+
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MetallicMap);
@@ -156,6 +159,9 @@ Shader "KageRP/Opaque"
                 data.bakedGI = SampleGI(normalWS);
                 data.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 data.emission = 0.0h;
+
+                half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, input.postionCS.xy * _ScreenSize.zw);
+                data.occlusion *= ssao;
 
                 half3 color = MobilePBR(data);
                 return OutputGBuffer(color, data);

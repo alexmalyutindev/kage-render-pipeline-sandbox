@@ -128,4 +128,13 @@ SAMPLER(samplerunity_SpecCube0);
 TEXTURECUBE(unity_SpecCube1);
 SAMPLER(samplerunity_SpecCube1);
 
+float4x4 _ViewMatrix;
+float4x4 _ProjMatrix;
+float4x4 _InvViewProjMatrix;
+float4x4 _InvViewMatrix;
+float4x4 _InvProjMatrix;
+float4   _InvProjParam;
+float4   _ScreenSize;       // {w, h, 1/w, 1/h}
+float4   _FrustumPlanes[6]; // {(a, b, c) = N, d = -dot(N, P)} [L, R, T, B, N, F]
+
 #endif

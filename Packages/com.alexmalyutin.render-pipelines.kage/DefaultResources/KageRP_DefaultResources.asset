@@ -16,3 +16,4 @@ MonoBehaviour:
   BlitColorAndDepth: {fileID: 0}
   PointLightMesh: {fileID: 5205256992746814640, guid: 1ea5caff763214e25a5a8f2c72739852, type: 3}
   PointLightMaterial: {fileID: 2100000, guid: fde52416979614a2f84dee312c9652ae, type: 2}
+  SSAOMaterial: {fileID: 2100000, guid: 5b4c51dc0ec8941738f11a7bc772e209, type: 2}

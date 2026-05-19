@@ -21,7 +21,6 @@ MonoBehaviour:
   - rid: 6020882026761289781
   - rid: 6020882026761289782
   - rid: 6020882062693892159
-  - rid: 6020882062693892158
   - rid: 6020882086145032377
   - rid: 6020882026761289783
   references:
@@ -33,7 +32,7 @@ MonoBehaviour:
         IsActive: 1
         Resolution: 1024
         DepthBits: 8
-        ShadowDistance: 30
+        ShadowDistance: 15
     - rid: 6020882026761289780
       type: {class: ForwardGBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
@@ -48,10 +47,6 @@ MonoBehaviour:
         IsActive: 1
     - rid: 6020882026761289783
       type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data:
-        IsActive: 1
-    - rid: 6020882062693892158
-      type: {class: ForwardTransparentPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
     - rid: 6020882062693892159

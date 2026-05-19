@@ -19,6 +19,7 @@ namespace Rendering.KageRP
 
             public Material Material;
             public TextureHandle OcclusionTexture;
+            public TextureHandle TempTexture;
         }
 
         public override void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline)
@@ -52,13 +53,24 @@ namespace Rendering.KageRP
                 format = GraphicsFormat.R8_UNorm,
             };
             passData.OcclusionTexture = renderGraph.CreateTexture(ssgiDesc);
-            builder.UseTexture(passData.OcclusionTexture, AccessFlags.Write);
+            builder.UseTexture(passData.OcclusionTexture, AccessFlags.ReadWrite);
 
+            ssgiDesc.name = "_SSAO_Temp";
+            passData.TempTexture = renderGraph.CreateTexture(ssgiDesc);
+            builder.UseTexture(passData.TempTexture, AccessFlags.ReadWrite);
+
+            builder.SetGlobalTextureAfterPass(passData.OcclusionTexture, Shader.PropertyToID("_OcclusionTexture"));
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                 cmd.SetGlobalTexture("_Depth", data.Depth);
-                cmd.Blit(data.Color, data.OcclusionTexture, data.Material, 0);
+                cmd.Blit(data.Color, data.OcclusionTexture, data.Material, 1);
+
+                // Blur
+                cmd.SetGlobalVector("_Direction", new Vector4(1, 0));
+                cmd.Blit(data.OcclusionTexture, data.TempTexture, data.Material, 0);
+                cmd.SetGlobalVector("_Direction", new Vector4(0, 1));
+                cmd.Blit(data.TempTexture, data.OcclusionTexture, data.Material, 0);
             });
         }
     }

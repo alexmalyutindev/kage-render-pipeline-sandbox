@@ -29,6 +29,7 @@ namespace Rendering.KageRP
 
             public RendererListHandle List;
 
+            public Vector4 ScreenSize;
             public Matrix4x4 View;
             public Matrix4x4 Proj;
             public bool MainLightShadowOn;
@@ -43,11 +44,14 @@ namespace Rendering.KageRP
             var gBufferData = frameData.Create<GBufferData>();
 
             using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward+GBuffer", out var passData);
+            var targetDesc = cameraData.CameraColorDescriptor;
 
+            passData.ScreenSize = new Vector4(
+                targetDesc.width, targetDesc.height,
+                1.0f / targetDesc.width, 1.0f / targetDesc.height
+            );
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
-
-            var targetDesc = cameraData.CameraColorDescriptor;
 
             var rgbHDRDesc = new TextureDesc(targetDesc.width, targetDesc.height)
             {
@@ -130,6 +134,7 @@ namespace Rendering.KageRP
                 if (data.MainLightShadowOn) context.cmd.EnableShaderKeyword("MAIN_LIGHT_SHADOW_ON");
                 else context.cmd.DisableShaderKeyword("MAIN_LIGHT_SHADOW_ON");
 
+                context.cmd.SetGlobalVector("_ScreenSize", data.ScreenSize);
                 context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
                 context.cmd.DrawRendererList(data.List);
             });
