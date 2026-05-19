@@ -10,7 +10,7 @@ namespace Rendering.KageRP
     public class KageRenderPipeline : RenderPipeline
     {
         private readonly KageRenderPipelineAsset _asset;
-        private readonly RenderGraph _renderGraph = new("Kage RenderGraph");
+        private readonly RenderGraph _renderGraph;
         private readonly ContextContainer _frameData = new();
         private readonly Dictionary<Camera, ContextContainer> _persistentFrameData = new();
 
@@ -20,6 +20,11 @@ namespace Rendering.KageRP
         {
             _asset = asset;
             foreach (var pass in asset.Passes) _passes.Add(pass);
+
+            _renderGraph = new RenderGraph("Kage RenderGraph")
+            {
+                nativeRenderPassesEnabled = true,
+            };
         }
 
         protected override void Render(ScriptableRenderContext context, List<Camera> cameras)
@@ -41,6 +46,9 @@ namespace Rendering.KageRP
                     scriptableRenderContext = context,
                     renderTextureUVOriginStrategy = RenderTextureUVOriginStrategy.BottomLeft,
                     rendererListCulling = true,
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    generateDebugData = true,
+#endif
                 };
 
                 // NOTE: Init frame data

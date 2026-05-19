@@ -92,7 +92,7 @@ namespace Rendering.KageRP
             builder.SetInputAttachment(gBufferData.GBuffer2, 1, AccessFlags.Read);
             builder.UseTexture(gBufferData.Depth, AccessFlags.Read);
 
-            builder.SetRenderAttachment(gBufferData.GBuffer0, 0, AccessFlags.Write);
+            builder.SetRenderAttachment(gBufferData.GBuffer0, 0, AccessFlags.ReadWrite);
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 // TODO: Camera relative rendering!
