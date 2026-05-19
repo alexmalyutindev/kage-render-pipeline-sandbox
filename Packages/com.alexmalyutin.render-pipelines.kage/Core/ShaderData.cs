@@ -5,24 +5,22 @@ using UnityEngine;
 
 namespace Rendering.KageRP
 {
-    class ShaderData : IDisposable
+    public class ShaderData : IDisposable
     {
-        static ShaderData m_Instance = null;
-        ComputeBuffer m_LightDataBuffer = null;
-        ComputeBuffer m_LightIndicesBuffer = null;
+        private static ShaderData m_Instance = null;
+        private ComputeBuffer m_LightDataBuffer = null;
+        private ComputeBuffer m_LightIndicesBuffer = null;
 
-        ComputeBuffer m_AdditionalLightShadowParamsStructuredBuffer = null;
-        ComputeBuffer m_AdditionalLightShadowSliceMatricesStructuredBuffer = null;
+        private ComputeBuffer m_AdditionalLightShadowParamsStructuredBuffer = null;
+        private ComputeBuffer m_AdditionalLightShadowSliceMatricesStructuredBuffer = null;
 
-        ShaderData() { }
+        private ShaderData() { }
 
-        internal static ShaderData instance
+        public static ShaderData instance
         {
             get
             {
-                if (m_Instance == null)
-                    m_Instance = new ShaderData();
-
+                if (m_Instance == null) m_Instance = new ShaderData();
                 return m_Instance;
             }
         }

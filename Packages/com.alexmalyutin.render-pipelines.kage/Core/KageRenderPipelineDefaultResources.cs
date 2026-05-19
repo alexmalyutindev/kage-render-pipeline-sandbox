@@ -10,5 +10,7 @@ namespace Rendering.KageRP
 
         public Mesh PointLightMesh;
         public Material PointLightMaterial;
+
+        public Material SSAOMaterial;
     }
 }

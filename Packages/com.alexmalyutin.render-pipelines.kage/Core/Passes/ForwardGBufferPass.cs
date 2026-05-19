@@ -7,12 +7,12 @@ using UnityEngine.Rendering.RenderGraphModule;
 namespace Rendering.KageRP
 {
     [Serializable]
-    public class GBufferPass : AbstractRenderGraphPass
+    public class ForwardGBufferPass : AbstractRenderGraphPass
     {
         private readonly FilteringSettings _filteringSettings;
         public readonly MSAASamples MSAASamples = MSAASamples.None;
 
-        public GBufferPass()
+        public ForwardGBufferPass()
         {
             // BUG: Ctor won't called on settings change! Creation will happens once! 
             _filteringSettings = FilteringSettings.defaultValue;
@@ -42,12 +42,12 @@ namespace Rendering.KageRP
             var lightingData = frameData.Get<LightingData>();
             var gBufferData = frameData.Create<GBufferData>();
 
-            using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward GBuffer", out var passData);
+            using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward+GBuffer", out var passData);
 
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
 
-            var targetDesc = cameraData.TargetDescriptor;
+            var targetDesc = cameraData.CameraColorDescriptor;
 
             var rgbHDRDesc = new TextureDesc(targetDesc.width, targetDesc.height)
             {

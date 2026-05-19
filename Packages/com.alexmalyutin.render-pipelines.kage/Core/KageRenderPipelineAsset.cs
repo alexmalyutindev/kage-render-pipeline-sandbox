@@ -14,8 +14,8 @@ namespace Rendering.KageRP
         public List<AbstractRenderGraphPass> Passes = new()
         {
             new MainLightShadowPass(),
-            new GBufferPass(),
-            new DeferredLitPass(),
+            new ForwardGBufferPass(),
+            new DeferredLightingPass(),
             new SkyboxPass(),
             new FinalBlitPass(),
         };

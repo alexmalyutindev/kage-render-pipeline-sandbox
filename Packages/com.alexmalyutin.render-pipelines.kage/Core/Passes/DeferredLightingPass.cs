@@ -6,7 +6,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 namespace Rendering.KageRP
 {
     [Serializable]
-    public class DeferredLitPass : AbstractRenderGraphPass
+    public class DeferredLightingPass : AbstractRenderGraphPass
     {
         private KageRenderPipelineDefaultResources _defaultResources;
         private readonly VisibleLight[] _pointLights = new VisibleLight[128];
@@ -49,7 +49,7 @@ namespace Rendering.KageRP
 
         private void StencilPrepass(RenderGraph renderGraph, GBufferData gBufferData, DeferredLightData deferredLightData)
         {
-            using var builder = renderGraph.AddRasterRenderPass<PassData>("DeferredLighting Stencil", out var passData);
+            using var builder = renderGraph.AddRasterRenderPass<PassData>("Deferred Lighting Stencil", out var passData);
             builder.AllowPassCulling(false);
 
             passData.PointLightMesh = _defaultResources.PointLightMesh;
@@ -77,7 +77,7 @@ namespace Rendering.KageRP
             DeferredLightData deferredLightData
         )
         {
-            using var builder = renderGraph.AddRasterRenderPass<PassData>("DeferredLit", out var passData);
+            using var builder = renderGraph.AddRasterRenderPass<PassData>("Deferred Lighting", out var passData);
             builder.AllowPassCulling(false);
 
             passData.View = cameraData.Camera.worldToCameraMatrix;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -11,6 +12,7 @@ namespace Rendering.KageRP
         private readonly KageRenderPipelineAsset _asset;
         private readonly RenderGraph _renderGraph = new("Kage RenderGraph");
         private readonly ContextContainer _frameData = new();
+        private readonly Dictionary<Camera, ContextContainer> _persistentFrameData = new();
 
         private readonly List<AbstractRenderGraphPass> _passes = new();
 
@@ -41,7 +43,18 @@ namespace Rendering.KageRP
                     rendererListCulling = true,
                 };
 
-                _frameData.Dispose();
+                // NOTE: Init frame data
+                {
+                    _frameData.Dispose();
+                    if (!_persistentFrameData.TryGetValue(camera, out var persistentFrameContext))
+                    {
+                        persistentFrameContext = new ContextContainer();
+                        _persistentFrameData.Add(camera, persistentFrameContext);
+                    }
+
+                    var persistentFrameData = _frameData.Create<PersistentFrameData>();
+                    persistentFrameData.Context = persistentFrameContext;
+                }
 
                 foreach (var pass in _passes)
                 {
@@ -119,10 +132,12 @@ namespace Rendering.KageRP
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            _renderGraph.Cleanup();
+            foreach (var context in _persistentFrameData) context.Value.Dispose();
+            ShaderData.instance.Dispose();
         }
 
-        private CullingResultData Culling(ScriptableRenderContext context, ContextContainer frameData, ref ScriptableCullingParameters cullingParameters)
+        private CullingResultData Culling(ScriptableRenderContext context, ContextContainer frameData,
+            ref ScriptableCullingParameters cullingParameters)
         {
             var cullingResultData = frameData.Create<CullingResultData>();
             cullingResultData.CullingResult = context.Cull(ref cullingParameters);
@@ -149,7 +164,7 @@ namespace Rendering.KageRP
             var cameraData = frameData.Create<CameraData>();
 
             cameraData.Camera = camera;
-            cameraData.TargetDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
+            cameraData.CameraColorDescriptor = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
             cameraData.CameraBackBuffer = renderGraph.ImportBackbuffer(
                 new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget)
             );

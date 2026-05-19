@@ -15,12 +15,14 @@ MonoBehaviour:
   DefaultResources: {fileID: 11400000, guid: 25f867cbf95604cb980b2f5428e9b14f, type: 2}
   UseSRPBatcher: 1
   Passes:
+  - rid: 6020882086145032378
   - rid: 6020882026761289779
   - rid: 6020882026761289780
   - rid: 6020882026761289781
   - rid: 6020882026761289782
   - rid: 6020882062693892159
   - rid: 6020882062693892158
+  - rid: 6020882086145032377
   - rid: 6020882026761289783
   references:
     version: 2
@@ -33,11 +35,11 @@ MonoBehaviour:
         DepthBits: 8
         ShadowDistance: 30
     - rid: 6020882026761289780
-      type: {class: GBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      type: {class: ForwardGBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
     - rid: 6020882026761289781
-      type: {class: DeferredLitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
     - rid: 6020882026761289782
@@ -54,5 +56,13 @@ MonoBehaviour:
         IsActive: 1
     - rid: 6020882062693892159
       type: {class: ForwardOpaquePass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1
+    - rid: 6020882086145032377
+      type: {class: StoreFrameBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1
+    - rid: 6020882086145032378
+      type: {class: SSAOPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1

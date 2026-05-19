@@ -7,7 +7,7 @@ namespace Rendering.KageRP
     public class CameraData : ContextItem
     {
         public Camera Camera;
-        public RenderTextureDescriptor TargetDescriptor;
+        public RenderTextureDescriptor CameraColorDescriptor;
         public TextureHandle CameraBackBuffer;
 
         public override void Reset()
