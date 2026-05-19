@@ -916,53 +916,29 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 670622024682658206, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: Damping.z
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 670622024682658206, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: CameraDistance
-      value: 2.45
-      objectReference: {fileID: 0}
-    - target: {fileID: 670622024682658206, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: Composition.DeadZone.Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 670622024682658206, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: Composition.ScreenPosition.x
-      value: -0.06
-      objectReference: {fileID: 0}
-    - target: {fileID: 670622024682658206, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: Composition.ScreenPosition.y
-      value: 0.03
-      objectReference: {fileID: 0}
-    - target: {fileID: 670622024682658206, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: Composition.HardLimits.Enabled
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 2833718493440570260, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: Target.TrackingTarget
       value: 
       objectReference: {fileID: 1895699739}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.828912
+      value: 1.9327577
       objectReference: {fileID: 0}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.4848704
+      value: 2.0754156
       objectReference: {fileID: 0}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.61
+      value: -4.521171
       objectReference: {fileID: 0}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.9945219
       objectReference: {fileID: 0}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.104528464
       objectReference: {fileID: 0}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalRotation.y
@@ -987,10 +963,6 @@ PrefabInstance:
     - target: {fileID: 7522247111663242659, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_Name
       value: PlayerCamera
-      objectReference: {fileID: 0}
-    - target: {fileID: 7522247111663242659, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1719,10 +1691,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 5654716673515779620, guid: 65dc63cdce16e9e44891f4264dd7c1c0, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 39f4d3c470ae143f48c511537c385c50, type: 2}
     - target: {fileID: 6766970634901535916, guid: 65dc63cdce16e9e44891f4264dd7c1c0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.48
@@ -3249,7 +3217,6 @@ GameObject:
   - component: {fileID: 2122586784}
   - component: {fileID: 2122586783}
   - component: {fileID: 2122586782}
-  - component: {fileID: 2122586785}
   - component: {fileID: 2122586786}
   - component: {fileID: 2122586787}
   m_Layer: 0
@@ -3298,7 +3265,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.02
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -3326,30 +3293,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2122586781}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.828912, y: 1.4848704, z: -4.61}
+  m_LocalRotation: {x: 0.104528464, y: 0, z: 0, w: 0.9945219}
+  m_LocalPosition: {x: 1.9327577, y: 2.0754156, z: -4.521171}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 18.6, y: -65.2, z: 0.099}
---- !u!114 &2122586785
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2122586781}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 618b0e3f6c65dd247a4a016150006c57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.FreeCamera
-  m_LookSpeedController: 120
-  m_LookSpeedMouse: 2
-  m_MoveSpeed: 10
-  m_MoveSpeedIncrement: 2.5
-  m_Turbo: 10
 --- !u!114 &2122586786
 MonoBehaviour:
   m_ObjectHideFlags: 0
