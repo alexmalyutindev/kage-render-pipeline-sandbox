@@ -1,0 +1,17 @@
+{
+  "name": "com.yourcompany.touchinputdevice",
+  "version": "1.0.0",
+  "displayName": "Touch Input Device",
+  "description": "Custom Unity Input System device with virtual buttons, sticks, and drag zones driven by UI Canvas events.",
+  "unity": "2021.3",
+  "unityRelease": "0f1",
+  "dependencies": {
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.ugui": "1.0.0"
+  },
+  "keywords": ["input", "touch", "mobile", "joystick", "gamepad"],
+  "author": {
+    "name": "Your Name",
+    "email": "you@yourcompany.com"
+  }
+}
