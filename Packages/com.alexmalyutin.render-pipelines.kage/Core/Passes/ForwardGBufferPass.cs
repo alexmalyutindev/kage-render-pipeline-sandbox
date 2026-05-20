@@ -46,8 +46,8 @@ namespace Rendering.KageRP
             using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward+GBuffer", out var passData);
             var targetDesc = cameraData.CameraBackBufferDescriptor;
 
-            var width = Mathf.RoundToInt(targetDesc.width * 0.5f);
-            var height = Mathf.RoundToInt(targetDesc.height * 0.5f);
+            var width = Mathf.RoundToInt(targetDesc.width * 0.75f);
+            var height = Mathf.RoundToInt(targetDesc.height * 0.75f);
 
             passData.ScreenSize = new Vector4(
                 width, height,
@@ -63,11 +63,10 @@ namespace Rendering.KageRP
                 msaaSamples = MSAASamples,
             };
             passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);
-            cameraData.CameraActiveColor = passData.GBuffer0;
 
             var rgba32Desc = new TextureDesc(width, height)
             {
-                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
                 msaaSamples = MSAASamples
             };
 
@@ -91,6 +90,9 @@ namespace Rendering.KageRP
             gBufferData.GBuffer1 = passData.GBuffer1;
             gBufferData.GBuffer2 = passData.GBuffer2;
             gBufferData.Depth = passData.Depth;
+
+            cameraData.CameraActiveColor = passData.GBuffer0;
+            cameraData.CameraActiveDepth = passData.Depth;
 
             var shaderPassName = new ShaderTagId("GBuffer");
             var drawingSettings = new DrawingSettings(shaderPassName, new SortingSettings(cameraData.Camera))

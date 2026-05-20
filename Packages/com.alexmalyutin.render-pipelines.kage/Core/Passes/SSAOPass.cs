@@ -38,15 +38,24 @@ namespace Rendering.KageRP
         public override void Record(RenderGraph renderGraph, ContextContainer frameData)
         {
             var cameraData = frameData.Get<CameraData>();
+            if (cameraData.Camera.cameraType is not (CameraType.Game or CameraType.SceneView))
+            {
+                return;
+            }
+            
             var persistentFrameData = frameData.Get<PersistentFrameData>();
-
-            if (!persistentFrameData.Context.Contains<PrevFrameBufferData>()) return;
-
+            if (!persistentFrameData.Context.Contains<PrevFrameBufferData>())
+            {
+                return;
+            }
             var prevFrameBufferData = persistentFrameData.Context.Get<PrevFrameBufferData>();
             if (prevFrameBufferData.FrameDepth == null || prevFrameBufferData.FrameDepth.rt == null)
             {
                 return;
             }
+
+            var prevFrameDepth = renderGraph.ImportTexture(prevFrameBufferData.FrameDepth);
+            if (!prevFrameDepth.IsValid()) return;
 
             using var builder = renderGraph.AddUnsafePass<PassData>("SSAO", out var passData);
             builder.AllowPassCulling(false);
@@ -54,7 +63,7 @@ namespace Rendering.KageRP
             passData.Material = _defaultResources.SSAOMaterial;
             passData.Params = new Vector4(_settings.OcclusionRadius, _settings.OcclusionThickness);
 
-            passData.Depth = renderGraph.ImportTexture(prevFrameBufferData.FrameDepth);
+            passData.Depth = prevFrameDepth;
 
             builder.UseTexture(passData.Depth, AccessFlags.Read);
 

@@ -43,13 +43,13 @@ namespace Rendering.KageRP
             using var builder = renderGraph.AddUnsafePass<PassData>("Store FrameBuffers", out var passData);
 
             // TODO: Check if I need to double import it! I will import this textures before in pipeline!!!
-            passData.SrcColor = gBufferData.GBuffer0;
+            passData.SrcColor = cameraData.CameraActiveColor;
             passData.DstColor = ImportPrevFrameBuffer(renderGraph, prevFrameBufferData.FrameColor);
             builder.UseTexture(passData.SrcColor, AccessFlags.Read);
             builder.UseTexture(passData.DstColor, AccessFlags.Write);
 
             // TODO: Check if I need to double import it! I will import this textures before in pipeline!!!
-            passData.SrcDepth = gBufferData.Depth;
+            passData.SrcDepth = cameraData.CameraActiveDepth;
             passData.DstDepth = ImportPrevFrameBuffer(renderGraph, prevFrameBufferData.FrameDepth);
             builder.UseTexture(passData.SrcDepth, AccessFlags.Read);
             builder.UseTexture(passData.DstDepth, AccessFlags.Write);
