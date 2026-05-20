@@ -25,7 +25,7 @@ namespace Rendering.KageRP
         {
             public TextureHandle GBuffer0; // 32 bit <- [ ForwardLit + Emission ] (RGB111110Float) <- Final HDR target
             public TextureHandle GBuffer1; // 32 bit <- [ Albedo.rgb  | AO ] (R8G8B8A8)
-            public TextureHandle GBuffer2; // 32 bit <- [ NormalVS.xy | Metallic | Smoothness ] (R8G8B8A8)
+            public TextureHandle GBuffer2; // 64 bit <- [ NormalVS.xy | LinearDepth | Metallic & Roughness ] (ARGBHalf)
             public TextureHandle Depth; // 32 bit <- [ Depth24 | Stencil8 ] (D24_UNorm_S8_UInt)
 
             public RendererListHandle List;
@@ -57,27 +57,27 @@ namespace Rendering.KageRP
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
 
-            var rgbHDRDesc = new TextureDesc(width, height)
+            var gBuffer0Desc = new TextureDesc(width, height)
             {
                 name = "GBuffer0",
-                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
                 msaaSamples = MSAASamples,
                 filterMode = FilterMode.Bilinear,
             };
-            passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);
-
-            var rgba32Desc = new TextureDesc(width, height)
+            var gBuffer1Desc = new TextureDesc(width, height)
             {
+                name = "GBuffer1",
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
+                memoryless = RenderTextureMemoryless.Color,
                 msaaSamples = MSAASamples,
             };
-
-            rgba32Desc.name = "GBuffer1";
-            passData.GBuffer1 = renderGraph.CreateTexture(rgba32Desc);
-
-            rgba32Desc.name = "GBuffer2";
-            passData.GBuffer2 = renderGraph.CreateTexture(rgba32Desc);
-
+            var gBuffer2Desc = new TextureDesc(width, height)
+            {
+                name = "GBuffer2",
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGBHalf, false),
+                memoryless = RenderTextureMemoryless.Color,
+                msaaSamples = MSAASamples,
+            };
             var depthDesc = new TextureDesc(width, height)
             {
                 name = "GBuffer_Depth",
@@ -86,6 +86,10 @@ namespace Rendering.KageRP
                 msaaSamples = MSAASamples,
                 clearBuffer = true,
             };
+
+            passData.GBuffer0 = renderGraph.CreateTexture(gBuffer0Desc);
+            passData.GBuffer1 = renderGraph.CreateTexture(gBuffer1Desc);
+            passData.GBuffer2 = renderGraph.CreateTexture(gBuffer2Desc);
             passData.Depth = renderGraph.CreateTexture(depthDesc);
 
             gBufferData.GBuffer0 = passData.GBuffer0;
@@ -102,8 +106,8 @@ namespace Rendering.KageRP
                 mainLightIndex = lightingData.MainLightIndex,
                 perObjectData = PerObjectData.LightData
                     | PerObjectData.ReflectionProbes
-                    // | PerObjectData.ReflectionProbeData
-                    // | PerObjectData.LightProbe,
+                // | PerObjectData.ReflectionProbeData
+                // | PerObjectData.LightProbe,
             };
 
             var rendererListDesc = new RendererListParams()
@@ -133,7 +137,6 @@ namespace Rendering.KageRP
             builder.SetRenderAttachmentDepth(passData.Depth);
 
             builder.AllowGlobalStateModification(true);
-            builder.SetGlobalTextureAfterPass(passData.Depth, Shader.PropertyToID("_GBuffer_Depth"));
             builder.SetRenderFunc<GBufferPassData>(static (data, context) =>
             {
                 if (data.MainLightShadowOn) context.cmd.EnableShaderKeyword("MAIN_LIGHT_SHADOW_ON");

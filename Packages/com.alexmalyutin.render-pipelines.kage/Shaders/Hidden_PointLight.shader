@@ -36,9 +36,9 @@ Shader "Hidden/KageRP/PointLight"
             //     Comp Equal
             // }
 
-            Blend One One
-            ZTest Off
             Cull Front
+            Blend One One
+            ZTest Greater
             ZWrite Off
             ColorMask RGB
 
@@ -49,9 +49,8 @@ Shader "Hidden/KageRP/PointLight"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
 
-            FRAMEBUFFER_INPUT_HALF(0); 
-            FRAMEBUFFER_INPUT_HALF(1); 
-            Texture2D<float> _GBuffer_Depth;
+            FRAMEBUFFER_INPUT_HALF(0);
+            FRAMEBUFFER_INPUT_HALF(1);
 
             struct Attributes
             {
@@ -77,29 +76,18 @@ Shader "Hidden/KageRP/PointLight"
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                half sceneDepth = _GBuffer_Depth.Load(int3(input.positionCS.xy, 0));
                 half4 gBuffer1 = LOAD_FRAMEBUFFER_INPUT(0, input.positionCS);
                 half4 gBuffer2 = LOAD_FRAMEBUFFER_INPUT(1, input.positionCS);
-                if (COMPARE_DEVICE_DEPTH_CLOSER(input.positionCS.z, sceneDepth))
-                {
-                    return 0.0h;
-                }
 
-                sceneDepth = LinearEyeDepth(sceneDepth, _ZBufferParams);
-                float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z) * sceneDepth;
-
-                half3 normalVS;
-                normalVS.xy = gBuffer2.xy * 2.0h - 1.0h;
-                normalVS.z = sqrt(max(0.00001f, 1.0f - dot(normalVS.xy, normalVS.xy)));
+                GBufferData gBuffer = ReadGBuffer(gBuffer1, gBuffer2);
+                float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z);
+                scenePositionVS *= gBuffer.depth;
 
                 Light light;
                 {
-                    float lightRadius = _LightRadius;
-                    float radiusSq = lightRadius * lightRadius;
-
                     float3 lightPositionVS = input.lightPositionVS;
                     float3 lightDirectionVS = lightPositionVS - scenePositionVS;
-                    
+
                     float distanceSqr = dot(lightDirectionVS, lightDirectionVS);
                     float lightAtten = rcp(distanceSqr);
                     // NOTE: GetPunctualLightDistanceAttenuation: distanceAttenuationFloat.x
@@ -112,30 +100,33 @@ Shader "Hidden/KageRP/PointLight"
                     light.shadowAttenuation = 1.0h;
                     light.distanceAttenuation = lightAtten * smoothFactor;
                 }
-                
-                InputData input_data;
+
+                InputData inputData;
                 {
                     // NOTE: All computation made in ViewSpace!
-                    input_data.positionWS = input.positionVS;
-                    input_data.normalWS = normalVS;
-                    input_data.viewDirectionWS = -SafeNormalize(scenePositionVS);
-                    input_data.shadowCoord = 0.0f;
-                    input_data.bakedGI = 0.0h;
+                    inputData.positionWS = scenePositionVS;
+                    inputData.normalWS = gBuffer.normalVS;
+                    inputData.viewDirectionWS = -SafeNormalize(scenePositionVS);
+                    inputData.shadowCoord = 0.0f;
+                    inputData.bakedGI = 0.0h;
                 }
 
                 MaterialData data;
                 {
-                    data.albedo = gBuffer1.rgb;
-                    data.occlusion = gBuffer1.a;
-                    data.metallic = gBuffer2.z;
-                    data.roughness = gBuffer2.w;
+                    data.albedo = gBuffer.albedo;
+                    data.occlusion = gBuffer.occlusion;
+                    data.metallic = gBuffer.metallic;
+                    data.roughness = gBuffer.roughness;
                     data.emission = 0.0h;
                     data.normalTS = half3(0.0h, 0.0h, 1.0h);
                     data.alpha = 0.0h;
                 }
 
+                //return half4(gBuffer.metallic, gBuffer.roughness, 0.0h, 1.0h);
+                // return saturate(dot(inputData.normalWS, light.direction));
+
                 BRDFData brdf = InitBRDFData(data);
-                half3 color = SingleLightPBR_Opt(brdf, input_data, light) * data.occlusion;
+                half3 color = SingleLightPBR_Opt(brdf, inputData, light) * data.occlusion;
                 return half4(color, 0.0h);
             }
             ENDHLSL
