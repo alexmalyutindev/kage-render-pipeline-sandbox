@@ -23,7 +23,7 @@ MonoBehaviour:
   - rid: 6020882026761289782
   - rid: 6020882086145032377
   - rid: 6020882155858821181
-  - rid: 6020882155858821184
+  - rid: 6020882155858821185
   references:
     version: 2
     RefIds:
@@ -33,13 +33,13 @@ MonoBehaviour:
         IsActive: 1
         Resolution: 1024
         DepthBits: 8
-        ShadowDistance: 15
+        ShadowDistance: 30
     - rid: 6020882026761289780
       type: {class: ForwardGBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        UseRenderScale: 1
-        RenderSacle: 0.75
+        UseRenderScale: 0
+        RenderSacle: 0.5
     - rid: 6020882026761289781
       type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
@@ -67,10 +67,7 @@ MonoBehaviour:
       type: {class: ForwardTransparentPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-    - rid: 6020882155858821184
-      type: {class: SnapdragonGameSupperResolutionPass, ns: DefaultNamespace, asm: Assembly-CSharp}
+    - rid: 6020882155858821185
+      type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        SGSR1Material: {fileID: 2100000, guid: 829fe7f617c274fe3bfe9d81eec2c775, type: 2}
-        EdgeSharpen: 1
-        Mode: 1
