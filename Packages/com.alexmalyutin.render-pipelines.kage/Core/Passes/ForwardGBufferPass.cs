@@ -60,7 +60,7 @@ namespace Rendering.KageRP
             var rgbHDRDesc = new TextureDesc(width, height)
             {
                 name = "GBuffer0",
-                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
                 msaaSamples = MSAASamples,
                 filterMode = FilterMode.Bilinear,
             };
@@ -134,9 +134,6 @@ namespace Rendering.KageRP
 
             builder.AllowGlobalStateModification(true);
             builder.SetGlobalTextureAfterPass(passData.Depth, Shader.PropertyToID("_GBuffer_Depth"));
-            // builder.SetGlobalTextureAfterPass(passData.GBuffer1, Shader.PropertyToID("_GBuffer1"));
-            // builder.SetGlobalTextureAfterPass(passData.GBuffer2, Shader.PropertyToID("_GBuffer2"));
-
             builder.SetRenderFunc<GBufferPassData>(static (data, context) =>
             {
                 if (data.MainLightShadowOn) context.cmd.EnableShaderKeyword("MAIN_LIGHT_SHADOW_ON");

@@ -40,6 +40,7 @@ Shader "Hidden/KageRP/PointLight"
             ZTest Off
             Cull Front
             ZWrite Off
+            ColorMask RGB
 
             HLSLPROGRAM
             #pragma vertex Vertex
@@ -134,7 +135,8 @@ Shader "Hidden/KageRP/PointLight"
                 }
 
                 BRDFData brdf = InitBRDFData(data);
-                return half4(SingleLightPBR_Opt(brdf, input_data, light) * data.occlusion, 1.0h);
+                half3 color = SingleLightPBR_Opt(brdf, input_data, light) * data.occlusion;
+                return half4(color, 0.0h);
             }
             ENDHLSL
         }

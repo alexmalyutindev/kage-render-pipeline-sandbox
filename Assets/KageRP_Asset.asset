@@ -23,7 +23,6 @@ MonoBehaviour:
   - rid: 6020882026761289782
   - rid: 6020882086145032377
   - rid: 6020882155858821181
-  - rid: 6020882155858821182
   - rid: 6020882153703211064
   references:
     version: 2
@@ -73,9 +72,5 @@ MonoBehaviour:
         Mode: 1
     - rid: 6020882155858821181
       type: {class: ForwardTransparentPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
-      data:
-        IsActive: 1
-    - rid: 6020882155858821182
-      type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1

@@ -28,7 +28,7 @@ namespace DefaultNamespace
             if (SGSR1Material == null) return;
 
             var cameraData = frameData.Get<CameraData>();
-            using var builder = renderGraph.AddUnsafePass<PassData>("SGSR1", out var passData);
+            using var builder = renderGraph.AddUnsafePass<PassData>("Upscale SGSRv1", out var passData);
 
             passData.Material = SGSR1Material;
 
