@@ -16,7 +16,9 @@
 * RGBY -> 3
 * LERP -> 4
 */
+#if !defined(OperationMode)
 #define OperationMode 1
+#endif
 
 /*
 * If set, will use edge direction to improve visual quality
@@ -26,7 +28,9 @@
 
 #define EdgeThreshold 8.0/255.0
 
-#define EdgeSharpness 3.0
+#if !defined(EdgeSharpness)
+#define EdgeSharpness 2.0
+#endif 
 
 ////////////////////////
 ////////////////////////

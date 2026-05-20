@@ -7,12 +7,17 @@ namespace DefaultNamespace
 {
     public class SnapdragonGameSupperResolutionPass : AbstractRenderGraphPass
     {
+        public enum OperationMode { RGBA = 1, RGBY = 3, LERP = 4 }
+
         public Material SGSR1Material;
+        [Range(1.0f, 2.0f)] public float EdgeSharpen = 2.0f;
+        public OperationMode Mode = OperationMode.RGBA;
 
         private class PassData
         {
             public Material Material;
 
+            public Vector4 Params;
             public Vector4 ViewportInfo;
             public TextureHandle InputTexture;
             public TextureHandle OutputTexture;
@@ -27,6 +32,8 @@ namespace DefaultNamespace
 
             passData.Material = SGSR1Material;
 
+            passData.Params = new Vector4((int) Mode, EdgeSharpen);
+
             var desc = cameraData.CameraBackBufferDescriptor;
             passData.ViewportInfo = new Vector4(1.0f / desc.width, 1.0f / desc.height, desc.width, desc.height);
             passData.InputTexture = cameraData.CameraActiveColor;
@@ -37,7 +44,8 @@ namespace DefaultNamespace
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                cmd.SetGlobalVector("ViewportInfo", data.ViewportInfo);
+                cmd.SetGlobalVector("_SGSR_Params", data.Params);
+                cmd.SetGlobalVector("_SGSR_ViewportInfo", data.ViewportInfo);
                 cmd.Blit(data.InputTexture, data.OutputTexture, data.Material, 0);
             });
         }
