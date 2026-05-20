@@ -109,6 +109,8 @@ namespace Rendering.KageRP
                 additionalLightCount++;
             }
 
+            if (additionalLightCount == 0) return;
+
             var lightIndicesBuffer = ShaderData.instance.GetLightIndicesBuffer(additionalLightCount);
             var lightDataBuffer = ShaderData.instance.GetLightDataBuffer(additionalLightCount);
             lightDataBuffer.SetData(additionalLightsData);

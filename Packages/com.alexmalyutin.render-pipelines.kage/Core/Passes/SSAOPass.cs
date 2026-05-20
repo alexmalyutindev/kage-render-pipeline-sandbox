@@ -77,7 +77,7 @@ namespace Rendering.KageRP
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                if (!data.SSAOActive)
+                if (!data.SSAOActive || !data.Depth.IsValid() || !data.OcclusionTexture.IsValid())
                 {
                     cmd.DisableShaderKeyword("SSAO_ON");
                     return;
@@ -107,10 +107,16 @@ namespace Rendering.KageRP
             cameraData = frameData.Get<CameraData>();
             prevFrameDepth = TextureHandle.nullHandle;
 
-            if (cameraData.Camera.cameraType is not (CameraType.Game or CameraType.SceneView)) return false;
+            if (cameraData.Camera.cameraType is not (CameraType.Game or CameraType.SceneView))
+            {
+                return false;
+            }
 
             var persistentFrameData = frameData.Get<PersistentFrameData>();
-            if (!persistentFrameData.Context.Contains<PrevFrameBufferData>()) return false;
+            if (!persistentFrameData.Context.Contains<PrevFrameBufferData>())
+            {
+                return false;
+            }
 
             var prevFrameBufferData = persistentFrameData.Context.Get<PrevFrameBufferData>();
             if (prevFrameBufferData.FrameDepth == null || prevFrameBufferData.FrameDepth.rt == null)
