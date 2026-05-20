@@ -22,6 +22,8 @@ MonoBehaviour:
   - rid: 6020882062693892159
   - rid: 6020882026761289782
   - rid: 6020882086145032377
+  - rid: 6020882155858821181
+  - rid: 6020882155858821182
   - rid: 6020882153703211064
   references:
     version: 2
@@ -37,6 +39,7 @@ MonoBehaviour:
       type: {class: ForwardGBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
+        UseRenderScale: 1
         RenderSacle: 0.75
     - rid: 6020882026761289781
       type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
@@ -66,5 +69,13 @@ MonoBehaviour:
       data:
         IsActive: 1
         SGSR1Material: {fileID: 2100000, guid: 829fe7f617c274fe3bfe9d81eec2c775, type: 2}
-        EdgeSharpen: 2
-        Mode: 3
+        EdgeSharpen: 1
+        Mode: 1
+    - rid: 6020882155858821181
+      type: {class: ForwardTransparentPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1
+    - rid: 6020882155858821182
+      type: {class: FinalBlitPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1

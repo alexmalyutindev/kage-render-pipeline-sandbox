@@ -69,6 +69,7 @@ Shader "KageRP/Opaque"
             #pragma fragment Fragment
 
             #pragma multi_compile_fragment _ MAIN_LIGHT_SHADOW_ON
+            #pragma multi_compile_fragment _ SSAO_ON
             #pragma shader_feature_local_fragment _HEIGHT_MAP
             #pragma shader_feature_local_fragment _OCCLUSION_MAP
 
@@ -134,7 +135,7 @@ Shader "KageRP/Opaque"
                 ApplyPerPixelDisplacement(_HeightMap, sampler_HeightMap, viewDirectionTS, _Parallax, input.uv);
                 #endif
 
-                half4 albedoAlpha = SAMPLE_TEXTURE2D_LOD(_BaseMap, sampler_BaseMap, input.uv, 0);
+                half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 albedoAlpha *= _BaseColor;
                 clip(albedoAlpha.a - 0.5h);
 
@@ -166,8 +167,10 @@ Shader "KageRP/Opaque"
                 materialData.alpha = 1.0h;
                 materialData.emission = 0.0h;
                 
+                #if defined(SSAO_ON)
                 half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, input.postionCS.xy * _ScreenSize.zw);
                 materialData.occlusion *= ssao;
+                #endif
 
                 BRDFData brdf = InitBRDFData(materialData);
                 half3 color = MobilePBR(brdf, inputData);

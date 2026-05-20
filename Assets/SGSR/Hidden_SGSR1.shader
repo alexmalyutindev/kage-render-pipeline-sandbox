@@ -8,6 +8,8 @@ Shader "Hidden/KageRP/SGSR1"
     {
 
         HLSLINCLUDE
+        #pragma editor_sync_compilation
+
         #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/GlobalSamplers.hlsl"
 

@@ -11,7 +11,8 @@ namespace Rendering.KageRP
     {
         private readonly FilteringSettings _filteringSettings;
         public readonly MSAASamples MSAASamples = MSAASamples.None;
-        [Range(0.1f, 2.0f)]public float RenderSacle = 0.75f;
+        [Space] public bool UseRenderScale = false;
+        [Range(0.1f, 2.0f)] public float RenderSacle = 0.75f;
 
         public ForwardGBufferPass()
         {
@@ -46,8 +47,8 @@ namespace Rendering.KageRP
             using var builder = renderGraph.AddRasterRenderPass<GBufferPassData>("Forward+GBuffer", out var passData);
             var targetDesc = cameraData.CameraBackBufferDescriptor;
 
-            var width = Mathf.RoundToInt(targetDesc.width * RenderSacle);
-            var height = Mathf.RoundToInt(targetDesc.height * RenderSacle);
+            var width = UseRenderScale ? Mathf.RoundToInt(targetDesc.width * RenderSacle) : targetDesc.width;
+            var height = UseRenderScale ? Mathf.RoundToInt(targetDesc.height * RenderSacle) : targetDesc.height;
 
             passData.ScreenSize = new Vector4(
                 width, height,
@@ -61,13 +62,14 @@ namespace Rendering.KageRP
                 name = "GBuffer0",
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
                 msaaSamples = MSAASamples,
+                filterMode = FilterMode.Bilinear,
             };
             passData.GBuffer0 = renderGraph.CreateTexture(rgbHDRDesc);
 
             var rgba32Desc = new TextureDesc(width, height)
             {
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
-                msaaSamples = MSAASamples
+                msaaSamples = MSAASamples,
             };
 
             rgba32Desc.name = "GBuffer1";
