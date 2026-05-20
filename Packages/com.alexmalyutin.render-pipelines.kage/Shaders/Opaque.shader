@@ -3,6 +3,7 @@ Shader "KageRP/Opaque"
     Properties
     {
         [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2
+        [Toggle(_ALPHA_TEST)] _AlphaTest ("Alpha Test", Float) = 0
 
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [MainTexture] _BaseMap ("Albedo", 2D) = "white" {}
@@ -70,8 +71,9 @@ Shader "KageRP/Opaque"
 
             #pragma multi_compile_fragment _ MAIN_LIGHT_SHADOW_ON
             #pragma multi_compile_fragment _ SSAO_ON
-            #pragma shader_feature_local_fragment _HEIGHT_MAP
+            #pragma shader_feature_local_fragment _ALPHA_TEST
             #pragma shader_feature_local_fragment _OCCLUSION_MAP
+            #pragma shader_feature_local_fragment _HEIGHT_MAP
 
             #define OPTIMIZATION
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
@@ -137,7 +139,10 @@ Shader "KageRP/Opaque"
 
                 half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 albedoAlpha *= _BaseColor;
+
+                #if defined(_ALPHA_TEST)
                 clip(albedoAlpha.a - 0.5h);
+                #endif
 
                 half metallic = SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, input.uv).x;
                 half roughness = SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, input.uv).x;
