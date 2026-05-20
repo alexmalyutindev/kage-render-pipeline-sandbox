@@ -24,8 +24,10 @@ Material:
   m_Shader: {fileID: 4800000, guid: c27dfdddd3e6419dbcea979b5bb3d9fe, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _HEIGHT_MAP
   m_InvalidKeywords:
+  - 
   - _METALLICSPECGLOSSMAP
   - _NORMALMAP
   m_LightmapFlags: 4
@@ -67,8 +69,8 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 87aaa64bc78f14ee28eba60474e924bc, type: 3}
+    - _HeightMap:
+        m_Texture: {fileID: 2800000, guid: f5cae201fe5a843748a9c427a6e6a197, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -111,7 +113,8 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Ints: []
+    m_Ints:
+    - _StencilBit: 0
     m_Floats:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
@@ -122,6 +125,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
+    - _CullMode: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
@@ -132,9 +136,9 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 1
-    - _NormalScale: 1
+    - _NormalScale: 6.68
     - _OcclusionStrength: 1
-    - _Parallax: 0.005
+    - _Parallax: 0.08
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _Roughness: 1
