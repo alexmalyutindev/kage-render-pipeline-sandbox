@@ -119,7 +119,6 @@ Shader "Hidden/KageRP/SSAO"
                 );
 
                 float noise = InterleavedGradientNoise(floor(input.positionCS.xy), 0);
-                float noise2 = InterleavedGradientNoise(floor(input.positionCS.xy), 1);
 
                 half occlusion = 0.0h;
                 float3 positionVS = ReconstructPositionVS(input.uv, centerDepth);

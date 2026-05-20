@@ -68,6 +68,7 @@ namespace Rendering.KageRP
                 builder.UseTexture(passData.OcclusionTexture, AccessFlags.ReadWrite);
 
                 ssgiDesc.name = "_SSAO_Temp";
+                ssgiDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RHalf, false);
                 passData.TempTexture = renderGraph.CreateTexture(ssgiDesc);
                 builder.UseTexture(passData.TempTexture, AccessFlags.ReadWrite);
 
@@ -83,7 +84,11 @@ namespace Rendering.KageRP
                     return;
                 }
 
-                cmd.SetGlobalTexture("_Depth", data.Depth);
+                // TODO: Use Linear Depth from GBuffer2.z!!!
+                cmd.Blit(data.Depth, data.TempTexture);
+
+                // AO
+                cmd.SetGlobalTexture("_Depth", data.TempTexture);
                 cmd.SetGlobalVector("_GTAO_Params", data.Params);
                 cmd.Blit(data.Depth, data.OcclusionTexture, data.Material, 1);
 

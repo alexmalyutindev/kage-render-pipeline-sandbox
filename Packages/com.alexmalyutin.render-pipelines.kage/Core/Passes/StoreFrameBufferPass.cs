@@ -49,6 +49,7 @@ namespace Rendering.KageRP
             builder.UseTexture(passData.DstColor, AccessFlags.Write);
 
             // TODO: Check if I need to double import it! I will import this textures before in pipeline!!!
+            // TODO: Use Linear Depth from GBuffer2.z!!!
             passData.SrcDepth = cameraData.CameraActiveDepth;
             passData.DstDepth = ImportPrevFrameBuffer(renderGraph, prevFrameBufferData.FrameDepth);
             builder.UseTexture(passData.SrcDepth, AccessFlags.Read);
