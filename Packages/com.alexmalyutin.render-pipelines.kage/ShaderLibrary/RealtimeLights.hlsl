@@ -32,11 +32,7 @@ int GetPerObjectLightIndex(uint index)
     uint offset = uint(unity_LightData.x);
     return _AdditionalLightsIndices[offset + index];
     #else
-    uint indices0 = unity_LightIndices[0];
-    uint indices1 = unity_LightIndices[1];
-    return int((index < 4)
-        ? ((indices0 >> (index * 8)) & 0xFF)
-        : ((indices1 >> ((index - 4) * 8)) & 0xFF));
+    return unity_LightIndices[index / 4][index % 4];
     #endif
 }
 

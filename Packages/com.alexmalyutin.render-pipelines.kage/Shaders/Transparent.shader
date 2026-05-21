@@ -136,7 +136,7 @@ Shader "KageRP/Transparent"
                 BRDFData brdf = InitBRDFData(materialData);
 
                 half3 color = MobilePBR(brdf, inputData);
-                
+
                 uint pixelLightCount = GetAdditionalLightsCount();
                 for (uint i = 0; i < pixelLightCount; i++)
                 {

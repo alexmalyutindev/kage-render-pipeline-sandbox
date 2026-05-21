@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Rendering.KageRP.ShaderLibrary;
 using Unity.Collections;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace Rendering.KageRP
     [Serializable]
     public class ForwardTransparentPass : AbstractRenderGraphPass
     {
+        public const int MaxAdditionalLights = 5;
         public static readonly int AdditionalLightsBufferId = Shader.PropertyToID("_AdditionalLightsBuffer");
         public static readonly int AdditionalLightsIndicesId = Shader.PropertyToID("_AdditionalLightsIndices");
         public static readonly int AdditionalLightsCountId = Shader.PropertyToID("_AdditionalLightsCount");
@@ -21,6 +23,11 @@ namespace Rendering.KageRP
             // BUG: Ctor won't called on settings change! Creation will happens once! 
             _filteringSettings = FilteringSettings.defaultValue;
             _filteringSettings.renderQueueRange = RenderQueueRange.transparent;
+        }
+
+        public override void BeforeCameraCulling(ref ScriptableCullingParameters cullingParameters)
+        {
+            cullingParameters.maximumVisibleLights = 32;
         }
 
         public override void AfterCameraCulling(
@@ -133,20 +140,29 @@ namespace Rendering.KageRP
             }
         }
 
-        private static int SetupPerObjectLightIndices(
-            CullingResults cullingResults, 
-            NativeSlice<VisibleLight> visibleLights)
+        private static int SetupPerObjectLightIndices(CullingResults cullingResults, NativeSlice<VisibleLight> visibleLights)
         {
             var lightIndexMap = cullingResults.GetLightIndexMap(Allocator.Temp);
 
-            int additionalLightCount = 0;
+            int globalDirectionalLightsCount = 0;
+            int additionalLightsCount = 0;
+
             for (int i = 0; i < visibleLights.Length; i++)
             {
-                var light = visibleLights.UnsafeElementAtMutable(i);
+                if (additionalLightsCount >= MaxAdditionalLights)
+                    break;
 
-                if (light.lightType is LightType.Point)
+                var lightType = visibleLights[i].lightType;
+
+                if (lightType == LightType.Directional)
                 {
-                    lightIndexMap[i] = additionalLightCount++;
+                    lightIndexMap[i] = -1;
+                    globalDirectionalLightsCount++;
+                }
+                else if (lightType == LightType.Point || lightType == LightType.Spot)
+                {
+                    lightIndexMap[i] -= globalDirectionalLightsCount;
+                    additionalLightsCount++;
                 }
                 else
                 {
@@ -154,16 +170,23 @@ namespace Rendering.KageRP
                 }
             }
 
-            // Zero out any trailing slots (reflection probes etc.)
-            for (int i = visibleLights.Length; i < lightIndexMap.Length; i++)
+            for (int i = globalDirectionalLightsCount + additionalLightsCount; i < lightIndexMap.Length; i++)
             {
                 lightIndexMap[i] = -1;
             }
 
             cullingResults.SetLightIndexMap(lightIndexMap);
-            lightIndexMap.Dispose();
 
-            return additionalLightCount;
+            if (additionalLightsCount > 0)
+            {
+                int lightAndReflectionProbeIndices = cullingResults.lightAndReflectionProbeIndexCount;
+        
+                cullingResults.FillLightAndReflectionProbeIndices(
+                    ShaderData.instance.GetLightIndicesBuffer(lightAndReflectionProbeIndices));
+            }
+
+            lightIndexMap.Dispose();
+            return additionalLightsCount;
         }
     }
 }
