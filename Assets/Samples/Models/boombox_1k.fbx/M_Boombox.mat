@@ -14,6 +14,7 @@ Material:
   m_ValidKeywords:
   - _OCCLUSION_MAP
   m_InvalidKeywords:
+  - 
   - _NORMALMAP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -81,8 +82,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: c74b3c13d29204a079eaf5dc18a7f763, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Ints: []
+    m_Ints:
+    - _StencilBit: 0
     m_Floats:
+    - _AlphaTest: 0
     - _BumpScale: 1
     - _CullMode: 2
     - _Cutoff: 0.5

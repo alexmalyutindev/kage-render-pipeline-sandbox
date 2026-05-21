@@ -118,6 +118,7 @@ Material:
     m_Floats:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
+    - _AlphaTest: 0
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
@@ -136,7 +137,7 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 1
-    - _NormalScale: 6.68
+    - _NormalScale: 2
     - _OcclusionStrength: 1
     - _Parallax: 0.08
     - _QueueOffset: 0
