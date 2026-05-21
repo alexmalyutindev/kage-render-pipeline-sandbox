@@ -70,4 +70,4 @@ MonoBehaviour:
         IsActive: 1
         _settings:
           OcclusionRadius: 1
-          OcclusionThickness: 0.95
+          OcclusionThickness: 0.9
