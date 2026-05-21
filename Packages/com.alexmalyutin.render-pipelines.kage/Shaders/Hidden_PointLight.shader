@@ -122,11 +122,10 @@ Shader "Hidden/KageRP/PointLight"
                     data.alpha = 0.0h;
                 }
 
-                //return half4(gBuffer.metallic, gBuffer.roughness, 0.0h, 1.0h);
-                // return saturate(dot(inputData.normalWS, light.direction));
+                // return half4(gBuffer.depth.xxx, 1.0h);
 
                 BRDFData brdf = InitBRDFData(data);
-                half3 color = SingleLightPBR_Opt(brdf, inputData, light) * data.occlusion;
+                half3 color = SingleLightPBR_Opt(brdf, inputData, light);
                 return half4(color, 0.0h);
             }
             ENDHLSL

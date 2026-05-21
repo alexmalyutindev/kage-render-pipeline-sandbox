@@ -48,7 +48,7 @@ BRDFData InitBRDFData(MaterialData surfaceData)
     data.roughness = surfaceData.roughness;
     data.occlusion = surfaceData.occlusion;
     data.emission = surfaceData.emission;
-    
+
     return data;
 }
 
@@ -58,8 +58,8 @@ half3 SingleLightPBR(BRDFData brdfData, InputData inputData, Light light)
     half3 V = inputData.viewDirectionWS;
 
     // float specularPower = 512.0h * (1.0h - brdfData.roughness); 
-    float specularPower = exp2(10.0h * (1.0h - brdfData.roughness) + 1.0h); 
-    float specularNormalization = (specularPower + 2.0h) / 8.0h; 
+    float specularPower = exp2(10.0h * (1.0h - brdfData.roughness) + 1.0h);
+    float specularNormalization = (specularPower + 2.0h) / 8.0h;
     // (1.04h - roughness) * (specularPower + 8.0) / 8.0;
 
     half3 L = light.direction;
@@ -86,7 +86,7 @@ half3 SingleLightPBR_Opt(BRDFData brdfData, InputData inputData, Light light)
 
     half NdotL = max(0.0h, dot(N, L));
     half NdotH = max(0.0h, dot(N, H));
-    half VdotH = max(0.0h, dot(V, H));  // <-- needed for K/SK
+    half VdotH = max(0.0h, dot(V, H)); // <-- needed for K/SK
 
     // D term
     half a2 = brdfData.roughness * brdfData.roughness;
@@ -97,13 +97,14 @@ half3 SingleLightPBR_Opt(BRDFData brdfData, InputData inputData, Light light)
     // Replaces both the geometry term G and the (4 NdotL NdotV) denominator.
     // V(l,v,h) = 1 / (VdotH * VdotH)
     // The *2 NdotL below folds in the standard BRDF NdotL weight.
-    half Vis = 1.0h / (VdotH * VdotH + 1e-4h);  // guard against VdotH=0
+    half Vis = 1.0h / (VdotH * VdotH + 1e-4h); // guard against VdotH=0
 
     // Fresnel: Schlick
     half3 F = brdfData.F0 + (1.0h - brdfData.F0) * pow(1.0h - VdotH, 5.0h);
     half3 specular = F * D_GGX * Vis * light.color * NdotL;
     half3 diffuse = brdfData.diffuseColor * light.color * NdotL;
 
+    // NOTE: Occlusion is applied here just for visual taste reason. Lighting looks flat without AO.
     half3 directLighting = max(0.0h, diffuse + specular) * brdfData.occlusion;
 
     return directLighting * light.shadowAttenuation * light.distanceAttenuation;
@@ -140,7 +141,7 @@ half3 MobilePBR(BRDFData brdfData, InputData inputData)
     half3 specular = F0 * mainLight.color * specularTerm;
 
     half3 diffuse = diffuseColor * mainLight.color * NdotL;
-    half3 directLighting = max(0.0h, diffuse + specular) * brdfData.occlusion;
+    half3 directLighting = max(0.0h, diffuse + specular);
 
     // IBL
     half3 F = SchlickFresnel(NdotV, F0);
