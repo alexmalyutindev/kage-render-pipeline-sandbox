@@ -85,7 +85,7 @@ Shader "KageRP/Transparent"
                 float3 positionWS : TEXCOORD1;
                 half3 normalWS : TEXCOORD2;
                 half4 tangentWS : TEXCOORD3;
-                float4 postionCS : SV_POSITION;
+                float4 positionCS : SV_POSITION;
             };
 
             Varyings Vertex(Attributes input)
@@ -99,7 +99,7 @@ Shader "KageRP/Transparent"
                 output.tangentWS.w = input.tangentOS.w * GetOddNegativeScale();
 
                 output.positionWS = positionWS;
-                output.postionCS = TransformWorldToHClip(positionWS);
+                output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
             }
 
@@ -122,6 +122,7 @@ Shader "KageRP/Transparent"
                 inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 inputData.bakedGI = SampleGI(normalWS);
                 inputData.viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
+                inputData.normalizedScreenUV = input.positionCS.xy * _ScreenSize.zw;
 
                 MaterialData materialData;
                 materialData.albedo = albedoAlpha.rgb;
@@ -129,7 +130,7 @@ Shader "KageRP/Transparent"
                 materialData.roughness = roughness * _Roughness;
                 materialData.occlusion = occlusion;
                 materialData.emission = 0.0h;
-                materialData.alpha = 1.0h;
+                materialData.alpha = albedoAlpha.a;
                 materialData.normalTS = normalTS;
 
                 BRDFData brdf = InitBRDFData(materialData);
@@ -140,7 +141,7 @@ Shader "KageRP/Transparent"
                 for (uint i = 0; i < pixelLightCount; i++)
                 {
                     Light light = GetAdditionalLight(i, input.positionWS);
-                    color += SingleLightPBR(brdf, inputData, light);
+                    color += SingleLightPBR_TwoSide(brdf, inputData, light) * materialData.albedo;
                 }
                 return half4(color, albedoAlpha.a);
             }

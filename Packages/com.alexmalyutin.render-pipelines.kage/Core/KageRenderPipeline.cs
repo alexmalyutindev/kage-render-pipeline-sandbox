@@ -97,7 +97,7 @@ namespace Rendering.KageRP
                     // TODO: Use backbuffer as GBuffer0?
                     // TODO: Init main lighting data
                     // TODO: Move this into PASS
-                    SetupLighting(_renderGraph, _frameData);
+                    SetupMainLightData(_renderGraph, _frameData);
 
                     foreach (var pass in _passes)
                     {
@@ -184,7 +184,7 @@ namespace Rendering.KageRP
             public Color MainLightColor;
         }
 
-        private void SetupLighting(RenderGraph renderGraph, ContextContainer frameData)
+        private void SetupMainLightData(RenderGraph renderGraph, ContextContainer frameData)
         {
             var cullingResultData = frameData.Get<CullingResultData>();
 

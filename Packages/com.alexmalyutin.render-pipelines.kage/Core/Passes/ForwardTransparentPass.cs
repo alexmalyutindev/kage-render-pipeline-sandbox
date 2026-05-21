@@ -12,7 +12,8 @@ namespace Rendering.KageRP
     {
         public static readonly int AdditionalLightsBufferId = Shader.PropertyToID("_AdditionalLightsBuffer");
         public static readonly int AdditionalLightsIndicesId = Shader.PropertyToID("_AdditionalLightsIndices");
-        
+        public static readonly int AdditionalLightsCountId = Shader.PropertyToID("_AdditionalLightsCount");
+
         private readonly FilteringSettings _filteringSettings;
 
         public ForwardTransparentPass()
@@ -20,6 +21,16 @@ namespace Rendering.KageRP
             // BUG: Ctor won't called on settings change! Creation will happens once! 
             _filteringSettings = FilteringSettings.defaultValue;
             _filteringSettings.renderQueueRange = RenderQueueRange.transparent;
+        }
+
+        public override void AfterCameraCulling(
+            ScriptableRenderContext context,
+            CullingResultData cullingResultData,
+            ContextContainer frameData
+        )
+        {
+            // TODO: Complete additional lights setup.
+            SetupAdditionalLightsData(cullingResultData.CullingResult);
         }
 
         private class PassData
@@ -57,19 +68,14 @@ namespace Rendering.KageRP
                 // | PerObjectData.ReflectionProbeData
                 // | PerObjectData.LightProbe
             };
-
-            var cullingResults = cullingResultData.CullingResult;
             var rendererListDesc = new RendererListParams()
             {
-                cullingResults = cullingResults,
+                cullingResults = cullingResultData.CullingResult,
                 drawSettings = drawingSettings,
                 filteringSettings = _filteringSettings,
             };
             passData.List = renderGraph.CreateRendererList(rendererListDesc);
             builder.UseRendererList(passData.List);
-
-            // TODO: Complete additional lights setup.
-            SetupAdditionalLightsData(cullingResults);
 
             builder.SetRenderAttachment(gBufferData.GBuffer0, 0, AccessFlags.Write);
             builder.SetRenderAttachmentDepth(gBufferData.Depth, AccessFlags.Read);
@@ -82,45 +88,82 @@ namespace Rendering.KageRP
 
         private static void SetupAdditionalLightsData(CullingResults cullingResults)
         {
-            using var lightIndexMap = cullingResults.GetLightIndexMap(Allocator.Temp);
-            // TODO: cullResults.SetLightIndexMap(perObjectLightIndexMap);
-
-            var additionalLightsData = new NativeArray<ShaderTypes.LightData>(cullingResults.lightIndexCount, Allocator.Temp);
-
-            var additionalLightCount = 0;
             var visibleLights = cullingResults.visibleLights;
-            for (var lightIndex = 0; lightIndex < cullingResults.lightIndexCount; lightIndex++)
+            var additionalLightCount = SetupPerObjectLightIndices(cullingResults, visibleLights);
+
+            if (additionalLightCount > 0)
             {
-                var light = visibleLights.UnsafeElementAtMutable(lightIndex);
-                var lightLocalToWorld = light.localToWorldMatrix;
+                var additionalLightsData = new NativeArray<ShaderTypes.LightData>(additionalLightCount, Allocator.Temp);
 
-                var position = lightLocalToWorld.GetColumn(3);
-                Vector4 dir = lightLocalToWorld.GetColumn(2);
-                var direction = new Vector4(-dir.x, -dir.y, -dir.z, 0.0f);
-
-                var lightData = new ShaderTypes.LightData
+                for (int i = 0, lightIter = 0; i < visibleLights.Length && lightIter < additionalLightCount; i++)
                 {
-                    color = light.finalColor,
-                    attenuation = Vector4.one,
-                    position = position,
-                    spotDirection = direction,
-                };
-                additionalLightsData[additionalLightCount] = lightData;
-                additionalLightCount++;
+                    var light = visibleLights.UnsafeElementAtMutable(i);
+                    if (light.lightType is not LightType.Point) continue;
+
+                    var lightLocalToWorld = light.localToWorldMatrix;
+                    var position = lightLocalToWorld.GetColumn(3);
+                    var direction = lightLocalToWorld.GetColumn(2);
+
+                    var range = light.range;
+                    var rangeSq = Mathf.Max(range * range, 0.0001f);
+
+                    additionalLightsData[lightIter] = new ShaderTypes.LightData
+                    {
+                        color = light.finalColor,
+                        position = position,
+                        spotDirection = new Vector4(-direction.x, -direction.y, -direction.z, 0.0f),
+                        attenuation = new Vector4(1.0f / rangeSq, 0.25f, 0.0f, 1.0f),
+                    };
+                    lightIter++;
+                }
+
+                var lightIndicesBuffer = ShaderData.instance.GetLightIndicesBuffer(cullingResults.lightAndReflectionProbeIndexCount);
+                var lightDataBuffer = ShaderData.instance.GetLightDataBuffer(additionalLightCount);
+                lightDataBuffer.SetData(additionalLightsData);
+
+                Shader.SetGlobalBuffer(AdditionalLightsBufferId, lightDataBuffer);
+                Shader.SetGlobalBuffer(AdditionalLightsIndicesId, lightIndicesBuffer);
+                Shader.SetGlobalVector(AdditionalLightsCountId, new Vector4(additionalLightCount, 0.0f, 0.0f, 0.0f));
+
+                additionalLightsData.Dispose();
+            }
+            else
+            {
+                Shader.SetGlobalVector(AdditionalLightsCountId, Vector4.zero);
+            }
+        }
+
+        private static int SetupPerObjectLightIndices(
+            CullingResults cullingResults, 
+            NativeSlice<VisibleLight> visibleLights)
+        {
+            var lightIndexMap = cullingResults.GetLightIndexMap(Allocator.Temp);
+
+            int additionalLightCount = 0;
+            for (int i = 0; i < visibleLights.Length; i++)
+            {
+                var light = visibleLights.UnsafeElementAtMutable(i);
+
+                if (light.lightType is LightType.Point)
+                {
+                    lightIndexMap[i] = additionalLightCount++;
+                }
+                else
+                {
+                    lightIndexMap[i] = -1;
+                }
             }
 
-            if (additionalLightCount == 0) return;
+            // Zero out any trailing slots (reflection probes etc.)
+            for (int i = visibleLights.Length; i < lightIndexMap.Length; i++)
+            {
+                lightIndexMap[i] = -1;
+            }
 
-            var lightIndicesBuffer = ShaderData.instance.GetLightIndicesBuffer(additionalLightCount);
-            var lightDataBuffer = ShaderData.instance.GetLightDataBuffer(additionalLightCount);
-            lightDataBuffer.SetData(additionalLightsData);
+            cullingResults.SetLightIndexMap(lightIndexMap);
+            lightIndexMap.Dispose();
 
-            // TODO: additionalLightCount
-            Shader.SetGlobalVector("_AdditionalLightsCount", new Vector4(0.0f, 0.0f));
-            Shader.SetGlobalBuffer(AdditionalLightsIndicesId, lightIndicesBuffer);
-            Shader.SetGlobalBuffer(AdditionalLightsBufferId, lightDataBuffer);
-
-            additionalLightsData.Dispose();
+            return additionalLightCount;
         }
     }
 }

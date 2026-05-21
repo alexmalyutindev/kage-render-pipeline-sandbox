@@ -17,5 +17,10 @@ namespace Rendering.KageRP
         {
             return ref UnsafeUtility.ArrayElementAsRef<T>(array.GetUnsafePtr(), index);
         }
+
+        public static unsafe ref T UnsafeElementAtMutable<T>(this NativeSlice<T> array, int index) where T : struct
+        {
+            return ref UnsafeUtility.ArrayElementAsRef<T>(array.GetUnsafePtr(), index);
+        }
     }
 }

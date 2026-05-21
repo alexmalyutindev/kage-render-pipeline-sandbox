@@ -28,8 +28,16 @@ int GetAdditionalLightsCount()
 
 int GetPerObjectLightIndex(uint index)
 {
+    #if USE_STRUCTURED_BUFFER_FOR_LIGHT_DATA
     uint offset = uint(unity_LightData.x);
     return _AdditionalLightsIndices[offset + index];
+    #else
+    uint indices0 = unity_LightIndices[0];
+    uint indices1 = unity_LightIndices[1];
+    return int((index < 4)
+        ? ((indices0 >> (index * 8)) & 0xFF)
+        : ((indices1 >> ((index - 4) * 8)) & 0xFF));
+    #endif
 }
 
 Light GetAdditionalPerObjectLight(int perObjectLightIndex, float3 positionWS)
@@ -37,21 +45,24 @@ Light GetAdditionalPerObjectLight(int perObjectLightIndex, float3 positionWS)
     float4 lightPositionWS = _AdditionalLightsBuffer[perObjectLightIndex].position;
     half3 color = _AdditionalLightsBuffer[perObjectLightIndex].color.rgb;
     half4 distanceAndSpotAttenuation = _AdditionalLightsBuffer[perObjectLightIndex].attenuation;
+    // TODO: Add SpotLight support! 
     half4 spotDirection = _AdditionalLightsBuffer[perObjectLightIndex].spotDirection;
 
     float3 lightVector = lightPositionWS.xyz - positionWS * lightPositionWS.w;
     float distanceSqr = max(dot(lightVector, lightVector), HALF_MIN);
-
     half3 lightDirection = half3(lightVector * rsqrt(distanceSqr));
 
-    // TODO: Compute distanceAttenuation!
-    half distanceAttenuation = 1.0h;
+    float lightAttenuation = rcp(distanceSqr);
+    half factor = half(distanceSqr * distanceAndSpotAttenuation.x);
+    half smoothFactor = saturate(half(1.0h) - factor * factor);
+    smoothFactor = smoothFactor * smoothFactor;
+    half distanceAttenuation = lightAttenuation * smoothFactor;
 
     Light light;
-    light.direction = lightDirection;
-    light.distanceAttenuation = distanceAttenuation;
     light.color = color;
+    light.direction = lightDirection;
     light.shadowAttenuation = 1.0h;
+    light.distanceAttenuation = distanceAttenuation;
 
     return light;
 }
