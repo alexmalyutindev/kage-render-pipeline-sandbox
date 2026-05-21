@@ -65,12 +65,12 @@ Light GetAdditionalPerObjectLight(int perObjectLightIndex, float3 positionWS)
 
 ///////////////////////////////////////////////
 
-Light GetMainLight(float4 shadowCoords)
+Light GetMainLight(float3 positionWS, float4 shadowCoords)
 {
     Light light;
     light.color = _MainLightColor.rgb;
     light.direction = _MainLightPosition.xyz;
-    light.shadowAttenuation = GetMainLightShadow(shadowCoords);
+    light.shadowAttenuation = GetMainLightShadow(positionWS, shadowCoords);
     light.distanceAttenuation = 1.0h;
     return light;
 }

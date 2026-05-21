@@ -15,6 +15,7 @@ namespace Rendering.KageRP
         public ShadowMapResolution Resolution = ShadowMapResolution._512;
         public DepthBits DepthBits = DepthBits.Depth8;
         [Min(0.01f)] public float ShadowDistance = 10.0f;
+        [Range(0.0f, 1.0f)] public float ShadowFade = 1.0f;
 
         private class PassData
         {
@@ -25,6 +26,7 @@ namespace Rendering.KageRP
             public Matrix4x4 Proj;
             public Matrix4x4 WorldToShadow;
             public Vector4 ShadowBias;
+            public Vector4 ShadowParams;
         }
 
         public override void BeforeCameraCulling(ref ScriptableCullingParameters cullingParameters)
@@ -105,12 +107,20 @@ namespace Rendering.KageRP
             // will do refactoring later.
             using var builder = renderGraph.AddRasterRenderPass<PassData>(nameof(MainLightShadowPass), out var passData);
 
-            var light = cullingResultData.CullingResult.visibleLights[lightingData.MainLightIndex];
+            var light = cullingResultData.CullingResult.visibleLights[lightingData.MainLightIndex].light;
             passData.ShadowBias = new Vector4(
-                light.light.shadowBias,
-                light.light.shadowNormalBias,
-                (int)light.lightType
+                light.shadowBias,
+                light.shadowNormalBias,
+                (int)light.type
             );
+
+            var softShadowsProp = light.shadows == LightShadows.Soft ? 1 : 0;
+            var fadeDistance = ShadowDistance * ShadowDistance;
+            var distanceFadeNear = fadeDistance * Mathf.Min(0.999f, 1.0f - ShadowFade);
+            var shadowFadeScale = 1.0f / (fadeDistance - distanceFadeNear);
+            var shadowFadeBias = -distanceFadeNear / (fadeDistance - distanceFadeNear);
+            passData.ShadowParams = new Vector4(light.shadowStrength, softShadowsProp, shadowFadeScale, shadowFadeBias);
+            
             passData.View = lightingData.MainLightShadowView;
             passData.Proj = lightingData.MainLightShadowProj;
             passData.WorldToShadow = lightingData.GetWorldToShadowMatrix();
@@ -144,10 +154,13 @@ namespace Rendering.KageRP
             builder.SetGlobalTextureAfterPass(passData.MainLightShadowMap, MainLightShadowMapID);
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
-                context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
-                context.cmd.SetGlobalVector("_ShadowBias", data.ShadowBias);
-                context.cmd.SetGlobalMatrix("_WorldToMainLightShadow", data.WorldToShadow);
-                context.cmd.DrawRendererList(data.List);
+                var cmd = context.cmd;
+
+                cmd.SetViewProjectionMatrices(data.View, data.Proj);
+                cmd.SetGlobalVector("_ShadowBias", data.ShadowBias);
+                cmd.SetGlobalMatrix("_WorldToMainLightShadow", data.WorldToShadow);
+                cmd.SetGlobalVector("_MainLightShadowParams", data.ShadowParams);
+                cmd.DrawRendererList(data.List);
             });
         }
     }

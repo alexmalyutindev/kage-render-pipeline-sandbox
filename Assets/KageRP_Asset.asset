@@ -33,7 +33,8 @@ MonoBehaviour:
         IsActive: 1
         Resolution: 1024
         DepthBits: 8
-        ShadowDistance: 15
+        ShadowDistance: 30
+        ShadowFade: 0.25
     - rid: 6020882026761289780
       type: {class: ForwardGBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:

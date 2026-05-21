@@ -11,7 +11,7 @@ namespace Rendering.KageRP
     [Serializable]
     public class ForwardTransparentPass : AbstractRenderGraphPass
     {
-        public const int MaxAdditionalLights = 5;
+        public const int MaxAdditionalLights = 32;
         public static readonly int AdditionalLightsBufferId = Shader.PropertyToID("_AdditionalLightsBuffer");
         public static readonly int AdditionalLightsIndicesId = Shader.PropertyToID("_AdditionalLightsIndices");
         public static readonly int AdditionalLightsCountId = Shader.PropertyToID("_AdditionalLightsCount");
@@ -104,7 +104,7 @@ namespace Rendering.KageRP
 
                 for (int i = 0, lightIter = 0; i < visibleLights.Length && lightIter < additionalLightCount; i++)
                 {
-                    var light = visibleLights.UnsafeElementAtMutable(i);
+                    ref var light = ref visibleLights.UnsafeElementAtMutable(i);
                     if (light.lightType is not LightType.Point) continue;
 
                     var lightLocalToWorld = light.localToWorldMatrix;

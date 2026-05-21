@@ -7,6 +7,9 @@
 // w: unused
 float4 _ShadowBias;
 float4x4 _WorldToMainLightShadow;
+// (x: shadowStrength, y: >= 1.0 if soft shadows, 0.0 otherwise, z: main light fade scale, w: main light fade bias)
+float4 _MainLightShadowParams;
+
 
 float3 ApplyShadowBias(float3 positionWS, float3 normalWS, float3 lightDirection)
 {
@@ -44,6 +47,15 @@ float4 TransformWorldToShadowMap(float3 positionWS)
     return saturate(shadowCoord);
 }
 
+half GetMainLightShadowFade(float3 positionWS)
+{
+    float3 camToPixel = positionWS - _WorldSpaceCameraPos;
+    float distanceCamToPixel2 = dot(camToPixel, camToPixel);
+
+    float fade = saturate(distanceCamToPixel2 * float(_MainLightShadowParams.z) + float(_MainLightShadowParams.w));
+    return half(fade);
+}
+
 ///////////////////////////
 /// SHADOW MAP SAMPLING ///
 ///////////////////////////
@@ -76,12 +88,13 @@ half SampleMainLightShadowMap2x2(float4 shadowCoords)
     return attenuation * 0.2h;
 }
 
-half GetMainLightShadow(float4 shadowCoords)
+half GetMainLightShadow(float3 positionWS, float4 shadowCoords)
 {
     #if defined(MAIN_LIGHT_SHADOW_ON)
     shadowCoords.z = saturate(shadowCoords.z);
     half shadow = SampleMainLightShadowMap2x2(shadowCoords);
-    return shadow;
+    half fade = GetMainLightShadowFade(positionWS);
+    return lerp(shadow, 1.0h, fade);
     #else
     return 1.0h;
     #endif

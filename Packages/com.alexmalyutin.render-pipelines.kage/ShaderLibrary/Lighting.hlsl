@@ -152,7 +152,7 @@ half3 MobilePBR(BRDFData brdfData, InputData inputData)
     // (1.04h - roughness) * (specularPower + 8.0) / 8.0;
 
     // Direct
-    Light mainLight = GetMainLight(inputData.shadowCoord);
+    Light mainLight = GetMainLight(inputData.positionWS, inputData.shadowCoord);
 
     // NOTE: float3() needed here to fix precision bug on specular highlingt.
     half3 L = mainLight.direction;
