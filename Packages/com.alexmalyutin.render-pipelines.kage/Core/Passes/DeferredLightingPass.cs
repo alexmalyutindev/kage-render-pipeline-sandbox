@@ -29,7 +29,6 @@ namespace Rendering.KageRP
             var cullingResultData = frameData.Get<CullingResultData>();
 
             var deferredLightData = PrepareDeferredLightData(cullingResultData);
-            // StencilPrepass(renderGraph, gBufferData, deferredLightData);
             DrawLights(renderGraph, gBufferData, cameraData, deferredLightData);
         }
 
@@ -47,29 +46,6 @@ namespace Rendering.KageRP
             public TextureHandle Depth;
         }
 
-        private void StencilPrepass(RenderGraph renderGraph, GBufferData gBufferData, DeferredLightData deferredLightData)
-        {
-            using var builder = renderGraph.AddRasterRenderPass<PassData>("Deferred Lighting Stencil", out var passData);
-            builder.AllowPassCulling(false);
-
-            passData.PointLightMesh = _defaultResources.PointLightMesh;
-            passData.PointLightMaterial = _defaultResources.PointLightMaterial;
-            passData.PointLightsCount = deferredLightData.PointLightsCount;
-            passData.PointLights = deferredLightData.PointLights;
-
-            builder.UseTexture(gBufferData.Depth, AccessFlags.Read);
-            builder.SetRenderAttachment(gBufferData.GBuffer0, 0);
-            builder.SetRenderFunc<PassData>(static (data, context) =>
-            {
-                // TODO: Camera relative rendering!
-                for (int lightIndex = 0; lightIndex < data.PointLightsCount; lightIndex++)
-                {
-                    var matrix = CreatePointLightData(data.PointLights[lightIndex]);
-                    context.cmd.DrawMesh(data.PointLightMesh, matrix, data.PointLightMaterial, 0, 1);
-                }
-            });
-        }
-
         private void DrawLights(
             RenderGraph renderGraph, 
             GBufferData gBufferData, 
@@ -79,6 +55,7 @@ namespace Rendering.KageRP
         {
             using var builder = renderGraph.AddRasterRenderPass<PassData>("Deferred Lighting", out var passData);
             builder.AllowPassCulling(false);
+            builder.AllowGlobalStateModification(true);
 
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
@@ -98,9 +75,12 @@ namespace Rendering.KageRP
                 // TODO: Camera relative rendering!
                 context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
 
+                // TODO: Draw light by group of 8, using different stencil bit.
+                context.cmd.SetGlobalInteger("_DeferredLight_StencilMask", 1);
                 for (int lightIndex = 0; lightIndex < data.PointLightsCount; lightIndex++)
                 {
                     var matrix = CreatePointLightData(data.PointLights[lightIndex]);
+                    context.cmd.DrawMesh(data.PointLightMesh, matrix, data.PointLightMaterial, 0, 1);
                     context.cmd.DrawMesh(data.PointLightMesh, matrix, data.PointLightMaterial, 0, 0);
                 }
             });

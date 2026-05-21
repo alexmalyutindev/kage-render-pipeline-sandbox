@@ -24,7 +24,7 @@ Shader "KageRP/CapsuleAO"
 
             Stencil
             {
-                Ref 1
+                Ref 2 // 0000_0010
                 Comp NotEqual
             }
 

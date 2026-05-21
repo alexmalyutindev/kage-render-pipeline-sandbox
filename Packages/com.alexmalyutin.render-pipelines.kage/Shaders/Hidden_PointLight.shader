@@ -28,19 +28,24 @@ Shader "Hidden/KageRP/PointLight"
 
             Name "PointLight"
 
-            // TODO: Add stencil prepass
-            // Stencil
-            // {
-            //     Ref 2 // 0000_0010
-            //     ReadMask 2
-            //     Comp Equal
-            // }
+            // Rendering deferred lights using Stencil culling algorithm
+            // ref. https://kayru.org/articles/deferred-stencil/
+            Stencil
+            {
+                Ref 0 // 0000_0000
+                ReadMask [_DeferredLight_StencilMask] // 0000_0001
+                WriteMask [_DeferredLight_StencilMask] // 0000_0001
+                Comp Equal
+                Pass Replace
+                Fail Replace
+            }
+
+            Blend One One
+            ColorMask RGB
 
             Cull Front
-            Blend One One
-            ZTest Greater
             ZWrite Off
-            ColorMask RGB
+            ZTest GEqual
 
             HLSLPROGRAM
             #pragma vertex Vertex
@@ -109,6 +114,7 @@ Shader "Hidden/KageRP/PointLight"
                     inputData.viewDirectionWS = -SafeNormalize(scenePositionVS);
                     inputData.shadowCoord = 0.0f;
                     inputData.bakedGI = 0.0h;
+                    inputData.normalizedScreenUV = 0.0h;
                 }
 
                 MaterialData data;
@@ -121,8 +127,6 @@ Shader "Hidden/KageRP/PointLight"
                     data.normalTS = half3(0.0h, 0.0h, 1.0h);
                     data.alpha = 0.0h;
                 }
-
-                // return half4(gBuffer.depth.xxx, 1.0h);
 
                 BRDFData brdf = InitBRDFData(data);
                 half3 color = SingleLightPBR_Opt(brdf, inputData, light);
@@ -140,20 +144,28 @@ Shader "Hidden/KageRP/PointLight"
 
             Name "PointLight Stencil"
 
+            // Rendering deferred lights using Stencil culling algorithm
+            // ref. https://kayru.org/articles/deferred-stencil/
             Stencil
             {
-                Ref 2 // 0000_0010
-                ReadMask 2
-                WriteMask 2
+                Ref [_DeferredLight_StencilMask]
+                ReadMask [_DeferredLight_StencilMask]
+                WriteMask [_DeferredLight_StencilMask]
+
                 Comp Always
-                Pass Replace
+                Pass Keep
+                Fail Keep
+
+                // Mark pixels where front faces fail depth
+                ZFail Replace
             }
 
-            Blend Off
             ColorMask 0
-            ZTest Greater
-            Cull Front
+
+            Cull Back
+            Blend Off
             ZWrite Off
+            ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex Vertex
@@ -176,15 +188,13 @@ Shader "Hidden/KageRP/PointLight"
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
-                float3 positionWS = input.positionOS * _LightRadius + _LightPositionWS;
+                float3 positionWS = _LightPositionWS + input.positionOS * _LightRadius;
                 output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
             }
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                half sceneDepth = _GBuffer_Depth.Load(int3(input.positionCS.xy, 0));
-                clip(sceneDepth - input.positionCS.z);
                 return 0.0h;
             }
             ENDHLSL
