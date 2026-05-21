@@ -89,6 +89,7 @@ Material:
     m_Ints:
     - _StencilBit: 0
     m_Floats:
+    - _AlphaTest: 0
     - _BumpScale: 1
     - _CullMode: 2
     - _Cutoff: 0.5
