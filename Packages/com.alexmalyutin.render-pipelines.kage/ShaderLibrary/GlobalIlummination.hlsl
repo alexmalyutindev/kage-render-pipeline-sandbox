@@ -52,7 +52,7 @@ half3 SchlickFresnel(half HdotV, half3 F0)
     #if !defined(OPTIMIZATION)
     return F0 + (1.0 - F0) * pow(1.0 - HdotV, 5.0);
     #else
-    return F0 + (1.0h - F0) * pow(2.0h, (-5.55473h * HdotV - 6.98316h) * HdotV);
+    return F0 + (1.0h - F0) * exp2((-5.55473h * HdotV - 6.98316h) * HdotV);
     #endif
 }
 
