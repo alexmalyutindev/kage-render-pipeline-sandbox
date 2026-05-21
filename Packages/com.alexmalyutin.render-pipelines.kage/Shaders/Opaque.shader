@@ -162,6 +162,7 @@ Shader "KageRP/Opaque"
                 inputData.viewDirectionWS = viewDirectionWS;
                 inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 inputData.bakedGI = SampleGI(normalWS);
+                inputData.normalizedScreenUV = input.postionCS.xy * _ScreenSize.zw;
 
                 MaterialData materialData;
                 materialData.albedo = albedoAlpha.rgb;
@@ -173,7 +174,7 @@ Shader "KageRP/Opaque"
                 materialData.emission = 0.0h;
                 
                 #if defined(SSAO_ON)
-                half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, input.postionCS.xy * _ScreenSize.zw);
+                half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, inputData.normalizedScreenUV);
                 materialData.occlusion *= ssao;
                 #endif
 

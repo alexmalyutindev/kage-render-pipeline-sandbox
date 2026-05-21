@@ -24,11 +24,12 @@ namespace Rendering.KageRP
         {
             public bool SSAOActive;
 
-            public TextureHandle Depth;
+            public TextureHandle SceneDepth;
 
             public Material Material;
-            public TextureHandle OcclusionTexture;
-            public TextureHandle TempTexture;
+            public TextureHandle Occlusion;
+            public TextureHandle SSAODepth;
+            public TextureHandle Temp;
             public Vector4 Params;
         }
 
@@ -54,49 +55,52 @@ namespace Rendering.KageRP
                 passData.Material = _defaultResources.SSAOMaterial;
                 passData.Params = new Vector4(_settings.OcclusionRadius, _settings.OcclusionThickness);
 
-                passData.Depth = prevFrameDepth;
+                passData.SceneDepth = prevFrameDepth;
 
-                builder.UseTexture(passData.Depth, AccessFlags.Read);
+                builder.UseTexture(passData.SceneDepth, AccessFlags.Read);
 
                 var frameDesc = cameraData.CameraBackBufferDescriptor;
-                var ssgiDesc = new TextureDesc(frameDesc.width / 4, frameDesc.height / 4)
+                var ssaoDesc = new TextureDesc(frameDesc.width / 4, frameDesc.height / 4)
                 {
                     name = "_SSAO",
                     format = GraphicsFormat.R8_UNorm,
                 };
-                passData.OcclusionTexture = renderGraph.CreateTexture(ssgiDesc);
-                builder.UseTexture(passData.OcclusionTexture, AccessFlags.ReadWrite);
+                passData.Occlusion = renderGraph.CreateTexture(ssaoDesc);
+                builder.UseTexture(passData.Occlusion, AccessFlags.ReadWrite);
 
-                ssgiDesc.name = "_SSAO_Temp";
-                ssgiDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RHalf, false);
-                passData.TempTexture = renderGraph.CreateTexture(ssgiDesc);
-                builder.UseTexture(passData.TempTexture, AccessFlags.ReadWrite);
+                ssaoDesc.name = "_SSAO_Temp";
+                passData.Temp = builder.CreateTransientTexture(ssaoDesc);
 
-                builder.SetGlobalTextureAfterPass(passData.OcclusionTexture, Shader.PropertyToID("_OcclusionTexture"));
+                ssaoDesc.name = "_SSAO_Depth";
+                ssaoDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RHalf, false);
+                passData.SSAODepth = builder.CreateTransientTexture(ssaoDesc);
+                builder.UseTexture(passData.SSAODepth, AccessFlags.ReadWrite);
+
+                builder.SetGlobalTextureAfterPass(passData.Occlusion, Shader.PropertyToID("_OcclusionTexture"));
             }
 
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                if (!data.SSAOActive || !data.Depth.IsValid() || !data.OcclusionTexture.IsValid())
+                if (!data.SSAOActive || !data.SceneDepth.IsValid() || !data.Occlusion.IsValid())
                 {
                     cmd.DisableShaderKeyword("SSAO_ON");
                     return;
                 }
 
                 // TODO: Use Linear Depth from GBuffer2.z!!!
-                cmd.Blit(data.Depth, data.TempTexture);
+                cmd.Blit(data.SceneDepth, data.SSAODepth);
 
                 // AO
-                cmd.SetGlobalTexture("_Depth", data.TempTexture);
+                cmd.SetGlobalTexture("_Depth", data.SSAODepth);
                 cmd.SetGlobalVector("_GTAO_Params", data.Params);
-                cmd.Blit(data.Depth, data.OcclusionTexture, data.Material, 1);
+                cmd.Blit(data.SceneDepth, data.Occlusion, data.Material, 1);
 
                 // Blur
                 cmd.SetGlobalVector("_Direction", new Vector4(1, 0));
-                cmd.Blit(data.OcclusionTexture, data.TempTexture, data.Material, 0);
+                cmd.Blit(data.Occlusion, data.Temp, data.Material, 0);
                 cmd.SetGlobalVector("_Direction", new Vector4(0, 1));
-                cmd.Blit(data.TempTexture, data.OcclusionTexture, data.Material, 0);
+                cmd.Blit(data.Temp, data.Occlusion, data.Material, 0);
 
                 cmd.EnableShaderKeyword("SSAO_ON");
             });

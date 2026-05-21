@@ -71,18 +71,24 @@ Shader "Hidden/KageRP/SSAO"
             half Fragment(Varyings input) : SV_Target
             {
                 const int kernelSize = 3;
-                const half kernelSizeRcp = 1.0h / half(kernelSize);
                 const half halfKernel = (half(kernelSize) - 1.0h) * 0.5h;
 
+                half centerDepth = LinearEyeDepth(_Depth.Sample(sampler_LinearClamp, input.uv), _ZBufferParams);
+
                 half result = 0.0h;
+                half totalWeight = 0.0h;
                 for (int i = 0; i < kernelSize; i++)
                 {
                     // TODO: Use depth guided blur!
-                    float2 offset = (i - halfKernel) * _Direction * _MainTex_TexelSize.xy * 1.5f;
-                    result += _MainTex.Sample(sampler_LinearClamp, input.uv + offset);
+                    float2 offset = (i - halfKernel) * _Direction * _MainTex_TexelSize.xy * 1.33f;
+                    half sample = _MainTex.Sample(sampler_LinearClamp, input.uv + offset);
+                    half depth = LinearEyeDepth(_Depth.Sample(sampler_LinearClamp, input.uv + offset), _ZBufferParams);
+                    half weight = exp2(-20.0h * abs(centerDepth - depth));
+                    result += sample * weight;
+                    totalWeight += weight;
                 }
 
-                return result * kernelSizeRcp;
+                return result / totalWeight;
             }
             ENDHLSL
         }
@@ -124,7 +130,7 @@ Shader "Hidden/KageRP/SSAO"
                 float3 positionVS = ReconstructPositionVS(input.uv, centerDepth);
                 float3 viewDirectionVS = -normalize(positionVS);
 
-                const int sliceCount = 4;
+                const int sliceCount = 2;
                 const int stepsCount = 4;
                 const float sliceCountRcp = 1.0f / sliceCount;
                 const float stepsCountRcp = 1.0f / stepsCount;

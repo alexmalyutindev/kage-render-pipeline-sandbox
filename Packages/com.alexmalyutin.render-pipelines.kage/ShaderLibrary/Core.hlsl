@@ -26,6 +26,7 @@ struct InputData
 {
     float3 positionWS;
     float4 shadowCoord;
+    float2 normalizedScreenUV;
     half3 normalWS;
     half3 viewDirectionWS; // Vector from surface to camera 
     half3 bakedGI;
