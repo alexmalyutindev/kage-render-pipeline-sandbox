@@ -76,20 +76,19 @@ half3 SingleLightPBR(BRDFData brdfData, InputData inputData, Light light)
     return directLighting * light.shadowAttenuation * light.distanceAttenuation;
 }
 
+// TODO: Optimize math!
 half3 SingleLightPBR_TwoSide(BRDFData brdfData, InputData inputData, Light light)
 {
     half3 N = inputData.normalWS;
     half3 V = inputData.viewDirectionWS;
 
-    // float specularPower = 512.0h * (1.0h - brdfData.roughness); 
     float specularPower = exp2(10.0h * (1.0h - brdfData.roughness) + 1.0h);
     float specularNormalization = (specularPower + 2.0h) / 8.0h;
-    // (1.04h - roughness) * (specularPower + 8.0) / 8.0;
 
     half3 L = light.direction;
-    half3 H = normalize(V + L);
+    half3 H = normalize(float3(V) + L);
     half NdotL = abs(dot(N, L));
-    float NdotH = max(0.0h, dot(N, H));
+    half NdotH = max(0.0h, dot(float3(N), H));
 
     float specularTerm = specularNormalization * pow(NdotH, specularPower);
     half3 specular = brdfData.F0 * light.color * specularTerm;
@@ -155,12 +154,12 @@ half3 MobilePBR(BRDFData brdfData, InputData inputData)
     // Direct
     Light mainLight = GetMainLight(inputData.shadowCoord);
 
+    // NOTE: float3() needed here to fix precision bug on specular highlingt.
     half3 L = mainLight.direction;
-    half3 H = normalize(V + L);
+    half3 H = normalize(float3(V) + L);
     half NdotL = max(0.0h, dot(N, L));
-    half NdotH = max(0.0h, dot(normalize(N), normalize(H)));
+    half NdotH = max(0.0h, dot(float3(N), H));
 
-    // BUG: SpecularTerm looks quantized, using half computation.
     half specularTerm = specularNormalization * pow(NdotH, specularPower);
     half3 specular = F0 * mainLight.color * specularTerm;
 
