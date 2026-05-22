@@ -1,30 +1,21 @@
-using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace TouchInput
 {
     [RequireComponent(typeof(Button))]
-    public class TouchButton : MonoBehaviour
+    public class TouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
-        public InputDevice InputDevice;
-        public InputAction Action;
-        public event Action<TouchButton> OnClick;
-        private Button _button;
+        [Range(0, 7)] public int ButtonIndex;
+        private TouchDevice _inputDevice;
 
-        private void OnEnable()
-        {
-            foreach (var actionBinding in Action.bindings)
-            {
-                InputControlPath.TryFindControl(InputDevice, actionBinding.path);
-            }
+        public void Init(TouchDevice inputDevice) => _inputDevice = inputDevice;
 
-            _button = GetComponent<Button>();
-            _button.onClick.AddListener(ClickHandler);
-        }
+        void IPointerDownHandler.OnPointerDown(PointerEventData eventData) =>
+            _inputDevice.SetButton(ButtonIndex, true);
 
-        private void OnDisable() => _button.onClick.RemoveListener(ClickHandler);
-        private void ClickHandler() => OnClick?.Invoke(this);
+        void IPointerUpHandler.OnPointerUp(PointerEventData eventData) =>
+            _inputDevice.SetButton(ButtonIndex, false);
     }
 }

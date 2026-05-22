@@ -60,23 +60,15 @@ namespace TouchInput
     [InputControlLayout(stateType = typeof(TouchDeviceState), displayName = "Touch Control Device")]
     public class TouchDevice : InputDevice, IInputUpdateCallbackReceiver
     {
-        // ── Public control accessors ──────────────────────────────────────────
-
         public ButtonControl[] Buttons { get; private set; }
         public StickControl[]  Sticks  { get; private set; }
         public Vector2Control[] DragZones { get; private set; }
 
-        // ── Static singleton (one device per session) ─────────────────────────
-
         public static TouchDevice current { get; private set; }
-
-        // ── Pending state written by UI components ────────────────────────────
 
         private TouchDeviceState _pendingState;
         private bool             _stateDirty;
         private readonly object  _lock = new object();
-
-        // ── Registration ──────────────────────────────────────────────────────
 
         static TouchDevice()
         {
@@ -88,8 +80,6 @@ namespace TouchInput
         {
             InputSystem.RegisterLayout<TouchDevice>();
         }
-
-        // ── Device lifecycle ──────────────────────────────────────────────────
 
         protected override void FinishSetup()
         {
@@ -119,8 +109,6 @@ namespace TouchInput
             base.OnRemoved();
             if (current == this) current = null;
         }
-
-        // ── State writers (called by UI components) ───────────────────────────
 
         public void SetButton(int index, bool pressed)
         {
@@ -164,8 +152,6 @@ namespace TouchInput
                 _stateDirty = true;
             }
         }
-
-        // ── IInputUpdateCallbackReceiver ──────────────────────────────────────
 
         public void OnUpdate()
         {

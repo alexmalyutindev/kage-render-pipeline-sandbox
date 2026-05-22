@@ -6,30 +6,26 @@ namespace TouchInput
 {
     public class TouchControlManager : MonoBehaviour
     {
-        public InputDevice InputDevice;
+        private TouchDevice _inputDevice;
         private readonly List<TouchButton> _touchButtons = new();
         private readonly List<TouchDragZone> _touchDragZones = new();
 
         private void Start()
         {
+            _inputDevice = InputSystem.AddDevice<TouchDevice>();
+
             GetComponentsInChildren(_touchButtons);
             GetComponentsInChildren(_touchDragZones);
 
-            foreach (var touchButton in _touchButtons)
+            if (Application.platform is RuntimePlatform.Android or RuntimePlatform.IPhonePlayer)
             {
-                touchButton.OnClick += static button =>
-                {
-                    // InputControlPath.TryFindControl(InputDevice, button.Action.bindings[].path);
-                    Debug.Log($"[InputSystem] Clicked: {button}");
-                };
+                foreach (var touchButton in _touchButtons) touchButton.Init(_inputDevice);
+                foreach (var touchDragZone in _touchDragZones) touchDragZone.Init(_inputDevice);
             }
-            
-            foreach (var touchDragZone in _touchDragZones)
+            else
             {
-                touchDragZone.OnDrag += static (dragZone, delta) =>
-                {
-                    Debug.Log($"[InputSystem] Drag: {dragZone} - {delta}");
-                };
+                foreach (var touchButton in _touchButtons) touchButton.gameObject.SetActive(false);
+                foreach (var touchDragZone in _touchDragZones) touchDragZone.gameObject.SetActive(false);
             }
         }
     }

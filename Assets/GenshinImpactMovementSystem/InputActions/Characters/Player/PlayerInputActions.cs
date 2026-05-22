@@ -107,7 +107,7 @@ namespace GenshinImpactMovementSystem
                     ""name"": ""WalkToggle"",
                     ""type"": ""Button"",
                     ""id"": ""59e112e7-6b2f-4a71-ab28-33fbecdb017e"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -117,7 +117,7 @@ namespace GenshinImpactMovementSystem
                     ""type"": ""Value"",
                     ""id"": ""01e2fa9d-3ceb-4750-8a94-8645aebbc805"",
                     ""expectedControlType"": ""Vector2"",
-                    ""processors"": """",
+                    ""processors"": ""ScaleVector2"",
                     ""interactions"": """",
                     ""initialStateCheck"": true
                 },
@@ -134,7 +134,7 @@ namespace GenshinImpactMovementSystem
                     ""name"": ""Dash"",
                     ""type"": ""Button"",
                     ""id"": ""3a08fe1b-9bf9-4d09-b4c2-6df4d4fa3fff"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -143,7 +143,7 @@ namespace GenshinImpactMovementSystem
                     ""name"": ""Sprint"",
                     ""type"": ""Button"",
                     ""id"": ""83217935-c13c-40c6-84f8-f8965a93ea16"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": ""Hold(duration=1)"",
                     ""initialStateCheck"": false
@@ -152,7 +152,7 @@ namespace GenshinImpactMovementSystem
                     ""name"": ""Jump"",
                     ""type"": ""Button"",
                     ""id"": ""42d840d2-9d21-44e7-992a-8d5a10e30132"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -240,18 +240,29 @@ namespace GenshinImpactMovementSystem
                     ""path"": ""<Gamepad>/leftStick"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": ""TouchSreen"",
                     ""action"": ""Movement"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
-                    ""id"": ""453cba71-9c9b-4308-833c-d8fe0fa32275"",
+                    ""id"": ""e9cdc19d-a3e8-4191-9a5f-8aa2d32bb4ff"",
                     ""path"": ""<Mouse>/delta"",
                     ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
+                    ""processors"": ""ScaleVector2"",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Look"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3d2a4afa-d920-4a59-bb96-537b85d6c5a2"",
+                    ""path"": ""<TouchDevice>/drag0"",
+                    ""interactions"": """",
+                    ""processors"": ""ScaleVector2(x=0.33,y=0.33)"",
+                    ""groups"": ""TouchSreen"",
                     ""action"": ""Look"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -273,7 +284,7 @@ namespace GenshinImpactMovementSystem
                     ""path"": ""<Keyboard>/leftShift"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""Dash"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -284,7 +295,18 @@ namespace GenshinImpactMovementSystem
                     ""path"": ""<Mouse>/rightButton"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Dash"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3a71cf30-f6b3-4071-9dcd-f2477bbf681d"",
+                    ""path"": ""<TouchDevice>/button2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";TouchSreen"",
                     ""action"": ""Dash"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -295,7 +317,7 @@ namespace GenshinImpactMovementSystem
                     ""path"": ""<Keyboard>/leftShift"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""Sprint"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -304,6 +326,17 @@ namespace GenshinImpactMovementSystem
                     ""name"": """",
                     ""id"": ""e0de007e-23c3-4d2f-b333-24d953a5ecf3"",
                     ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Sprint"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a37abfad-b602-4cf2-a2e5-fc5318493b3e"",
+                    ""path"": ""<TouchDevice>/button2"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -315,6 +348,17 @@ namespace GenshinImpactMovementSystem
                     ""name"": """",
                     ""id"": ""ef7c923b-bc76-4e1f-816b-2a555e093e49"",
                     ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""6c0ae43b-1144-475e-86b5-cb645dc047cb"",
+                    ""path"": ""<TouchDevice>/button3"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -336,7 +380,35 @@ namespace GenshinImpactMovementSystem
             ]
         }
     ],
-    ""controlSchemes"": []
+    ""controlSchemes"": [
+        {
+            ""name"": ""Keyboard&Mouse"",
+            ""bindingGroup"": ""Keyboard&Mouse"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<Keyboard>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                },
+                {
+                    ""devicePath"": ""<Mouse>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""TouchSreen"",
+            ""bindingGroup"": ""TouchSreen"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<TouchDevice>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        }
+    ]
 }");
             // Player
             m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
@@ -597,6 +669,32 @@ namespace GenshinImpactMovementSystem
         /// Provides a new <see cref="PlayerActions" /> instance referencing this action map.
         /// </summary>
         public PlayerActions @Player => new PlayerActions(this);
+        private int m_KeyboardMouseSchemeIndex = -1;
+        /// <summary>
+        /// Provides access to the input control scheme.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputControlScheme" />
+        public InputControlScheme KeyboardMouseScheme
+        {
+            get
+            {
+                if (m_KeyboardMouseSchemeIndex == -1) m_KeyboardMouseSchemeIndex = asset.FindControlSchemeIndex("Keyboard&Mouse");
+                return asset.controlSchemes[m_KeyboardMouseSchemeIndex];
+            }
+        }
+        private int m_TouchSreenSchemeIndex = -1;
+        /// <summary>
+        /// Provides access to the input control scheme.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputControlScheme" />
+        public InputControlScheme TouchSreenScheme
+        {
+            get
+            {
+                if (m_TouchSreenSchemeIndex == -1) m_TouchSreenSchemeIndex = asset.FindControlSchemeIndex("TouchSreen");
+                return asset.controlSchemes[m_TouchSreenSchemeIndex];
+            }
+        }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Player" which allows adding and removing callbacks.
         /// </summary>
