@@ -79,9 +79,6 @@ Shader "KageRP/Opaque"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/ParallaxOclussionMapping.hlsl"
 
-            // TEST: Occlusion
-            Texture2D<half> _OcclusionTexture;
-
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MetallicMap);
@@ -168,15 +165,10 @@ Shader "KageRP/Opaque"
                 materialData.albedo = albedoAlpha.rgb;
                 materialData.metallic = metallic * _Metallic;
                 materialData.roughness = roughness * _Roughness;
-                materialData.occlusion = occlusion;
+                materialData.occlusion = occlusion * GetSSAO(inputData.normalizedScreenUV);
                 materialData.normalTS = normalTS;
                 materialData.alpha = 1.0h;
                 materialData.emission = 0.0h;
-                
-                #if defined(SSAO_ON)
-                half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, inputData.normalizedScreenUV);
-                materialData.occlusion *= ssao;
-                #endif
 
                 BRDFData brdf = InitBRDFData(materialData);
                 half3 color = MobilePBR(brdf, inputData);

@@ -63,6 +63,7 @@ namespace Rendering.KageRP
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGB111110Float, false),
                 msaaSamples = MSAASamples,
                 filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
             };
             var gBuffer1Desc = new TextureDesc(width, height)
             {
@@ -70,6 +71,7 @@ namespace Rendering.KageRP
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGB32, false),
                 memoryless = RenderTextureMemoryless.Color,
                 msaaSamples = MSAASamples,
+                wrapMode = TextureWrapMode.Clamp,
             };
             var gBuffer2Desc = new TextureDesc(width, height)
             {
@@ -77,6 +79,7 @@ namespace Rendering.KageRP
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGBHalf, false),
                 memoryless = RenderTextureMemoryless.Color,
                 msaaSamples = MSAASamples,
+                wrapMode = TextureWrapMode.Clamp,
             };
             var depthDesc = new TextureDesc(width, height)
             {
@@ -85,6 +88,7 @@ namespace Rendering.KageRP
                 depthBufferBits = DepthBits.Depth24,
                 msaaSamples = MSAASamples,
                 clearBuffer = true,
+                wrapMode = TextureWrapMode.Clamp,
             };
 
             passData.GBuffer0 = renderGraph.CreateTexture(gBuffer0Desc);

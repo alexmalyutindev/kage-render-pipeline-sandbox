@@ -64,26 +64,32 @@ float4 _MainLightShadowMap_TexelSize;
 TEXTURE2D_SHADOW(_MainLightShadowMap);
 SAMPLER_CMP(sampler_MainLightShadowMap);
 
-half SampleMainLightShadowMap(float3 shadowCoords)
+half SampleMainLightShadowMapPCF(float3 shadowCoords)
 {
     return SAMPLE_TEXTURE2D_SHADOW(_MainLightShadowMap, sampler_MainLightShadowMap, shadowCoords);
 }
 
-half SampleMainLightShadowMap(float3 shadowCoords, float2 offset)
+half SampleMainLightShadowMapLinear(float3 shadowCoords)
 {
-    return SampleMainLightShadowMap(float3(shadowCoords.xy + offset, shadowCoords.z));
+    half shadowZ = SAMPLE_TEXTURE2D(_MainLightShadowMap, sampler_LinearClamp, shadowCoords.xy);
+    return step(shadowZ, shadowCoords.z);
+}
+
+half SampleMainLightShadowMapPCF(float3 shadowCoords, float2 offset)
+{
+    return SampleMainLightShadowMapPCF(float3(shadowCoords.xy + offset, shadowCoords.z));
 }
 
 half SampleMainLightShadowMap2x2(float4 shadowCoords)
 {
-    float4 offsets = float4(_MainLightShadowMap_TexelSize.xy, -_MainLightShadowMap_TexelSize.xy) * 0.66f;
+    float4 offsets = float4(_MainLightShadowMap_TexelSize.xy, -_MainLightShadowMap_TexelSize.xy) * 0.5f;
     half attenuation = 0.0h;
 
-    attenuation += SampleMainLightShadowMap(shadowCoords.xyz);
-    attenuation += SampleMainLightShadowMap(shadowCoords.xyz, offsets.xy);
-    attenuation += SampleMainLightShadowMap(shadowCoords.xyz, offsets.xw);
-    attenuation += SampleMainLightShadowMap(shadowCoords.xyz, offsets.zy);
-    attenuation += SampleMainLightShadowMap(shadowCoords.xyz, offsets.zw);
+    attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz);
+    attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.xy);
+    attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.xw);
+    attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.zy);
+    attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.zw);
 
     return attenuation * 0.2h;
 }

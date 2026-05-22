@@ -119,7 +119,7 @@ void ApplyPerPixelDisplacement(
     TEXTURE2D_PARAM(heightMap, sampler_heightMap), half3 normalizedViewDirTS, float scale, inout float2 uv)
 {
     #if !defined(PARALLAX_BIAS)
-    #define PARALLAX_BIAS 0.2
+    #define PARALLAX_BIAS 0.42
     #endif
     normalizedViewDirTS.xy /= normalizedViewDirTS.z + PARALLAX_BIAS;
     float2 uvOffset = ParallaxRaymarching(heightMap, sampler_heightMap, normalizedViewDirTS.xy, scale, uv);

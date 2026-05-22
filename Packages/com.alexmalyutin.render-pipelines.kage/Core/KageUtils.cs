@@ -16,17 +16,20 @@ namespace Rendering.KageRP
         {
             if (handle == null || handle.rt == null)
                 return true;
+
             return
+                handle.rt.graphicsFormat != descriptor.graphicsFormat ||
+                handle.rt.sRGB != descriptor.sRGB ||
                 handle.rt.width != descriptor.width ||
                 handle.rt.height != descriptor.height;
         }
 
-        public static bool ReAllocIfNeeded(ref RTHandle frameColor, RenderTextureDescriptor descriptor, string name)
+        public static bool ReAllocIfNeeded(ref RTHandle texture, RenderTextureDescriptor descriptor, string name)
         {
-            if (KageUtils.RTHandleNeedsReAlloc(frameColor, descriptor))
+            if (RTHandleNeedsReAlloc(texture, descriptor))
             {
-                if (frameColor != null) RTHandles.Release(frameColor);
-                frameColor = RTHandles.Alloc(descriptor, name: name);
+                if (texture != null) RTHandles.Release(texture);
+                texture = RTHandles.Alloc(descriptor, name: name);
                 return true;
             }
 

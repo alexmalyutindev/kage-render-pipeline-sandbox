@@ -69,11 +69,12 @@ namespace Rendering.KageRP
                 builder.UseTexture(passData.Occlusion, AccessFlags.ReadWrite);
 
                 ssaoDesc.name = "_SSAO_Temp";
-                passData.Temp = builder.CreateTransientTexture(ssaoDesc);
+                passData.Temp = renderGraph.CreateTexture(ssaoDesc);
+                builder.UseTexture(passData.Temp, AccessFlags.ReadWrite);
 
                 ssaoDesc.name = "_SSAO_Depth";
                 ssaoDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RHalf, false);
-                passData.SSAODepth = builder.CreateTransientTexture(ssaoDesc);
+                passData.SSAODepth = renderGraph.CreateTexture(ssaoDesc);
                 builder.UseTexture(passData.SSAODepth, AccessFlags.ReadWrite);
 
                 builder.SetGlobalTextureAfterPass(passData.Occlusion, Shader.PropertyToID("_OcclusionTexture"));
@@ -82,7 +83,11 @@ namespace Rendering.KageRP
             builder.SetRenderFunc<PassData>(static (data, context) =>
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                if (!data.SSAOActive || !data.SceneDepth.IsValid() || !data.Occlusion.IsValid())
+                if (!data.SSAOActive || 
+                    !data.SceneDepth.IsValid() || 
+                    !data.SceneDepth.IsValid() || 
+                    !data.Occlusion.IsValid()
+                )
                 {
                     cmd.DisableShaderKeyword("SSAO_ON");
                     return;
@@ -122,18 +127,9 @@ namespace Rendering.KageRP
             }
 
             var persistentFrameData = frameData.Get<PersistentFrameData>();
-            if (!persistentFrameData.Context.Contains<PrevFrameBufferData>())
-            {
-                return false;
-            }
-
+            if (!persistentFrameData.Context.Contains<PrevFrameBufferData>()) return false;
             var prevFrameBufferData = persistentFrameData.Context.Get<PrevFrameBufferData>();
-            if (prevFrameBufferData.FrameDepth == null || prevFrameBufferData.FrameDepth.rt == null)
-            {
-                return false;
-            }
-
-            prevFrameDepth = renderGraph.ImportTexture(prevFrameBufferData.FrameDepth);
+            prevFrameDepth = prevFrameBufferData.GetFrameDepth(renderGraph);
             if (!prevFrameDepth.IsValid()) return false;
 
             return true;

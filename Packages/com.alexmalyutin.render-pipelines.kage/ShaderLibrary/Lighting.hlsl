@@ -5,10 +5,28 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ImageBasedLighting.hlsl"
 
-#include "UnityInput.hlsl"
-#include "RealtimeLights.hlsl"
-#include "BRDFData.hlsl"
-#include "GlobalIlummination.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/UnityInput.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/RealtimeLights.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/BRDFData.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/GlobalIlummination.hlsl"
+
+// TEST: Occlusion
+Texture2D<half> _OcclusionTexture;
+half GetSSAO(float2 normalizedScreenUV)
+{
+    #if defined(SSAO_ON)
+    return _OcclusionTexture.Sample(sampler_LinearClamp, normalizedScreenUV);
+    #else
+    return 1.0h;
+    #endif
+}
+void ApplySSAO(inout half3 color, float2 normalizedScreenUV)
+{
+    #if defined(SSAO_ON)
+    half ssao = _OcclusionTexture.Sample(sampler_LinearClamp, normalizedScreenUV);
+    color *= ssao;
+    #endif
+}
 
 ////////////////////////
 // GGX LIGHTING MODEL //
