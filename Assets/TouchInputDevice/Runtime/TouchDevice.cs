@@ -38,7 +38,7 @@ namespace TouchInput
         public Vector2 stick2;
         [InputControl(name = "stick3", layout = "Stick", format = "VEC2")]
         public Vector2 stick3;
-
+        
         // 4 drag zones – delta Vector2 per zone
         [InputControl(name = "drag0", layout = "Vector2", format = "VEC2")]
         public Vector2 drag0;
@@ -61,14 +61,16 @@ namespace TouchInput
     public class TouchDevice : InputDevice, IInputUpdateCallbackReceiver
     {
         public ButtonControl[] Buttons { get; private set; }
-        public StickControl[]  Sticks  { get; private set; }
+        public StickControl[] Sticks { get; private set; }
         public Vector2Control[] DragZones { get; private set; }
 
         public static TouchDevice current { get; private set; }
 
         private TouchDeviceState _pendingState;
-        private bool             _stateDirty;
-        private readonly object  _lock = new object();
+        private bool _stateDirty;
+        private short _dragZoneActiveMask;
+        private short _prevDragZoneActiveMask;
+        private readonly object _lock = new object();
 
         static TouchDevice()
         {
@@ -116,7 +118,7 @@ namespace TouchInput
             lock (_lock)
             {
                 if (pressed) _pendingState.buttons |= (short)(1 << index);
-                else         _pendingState.buttons &= (short)~(1 << index);
+                else _pendingState.buttons &= (short)~(1 << index);
                 _stateDirty = true;
             }
         }
@@ -133,6 +135,7 @@ namespace TouchInput
                     case 2: _pendingState.stick2 = value; break;
                     case 3: _pendingState.stick3 = value; break;
                 }
+
                 _stateDirty = true;
             }
         }
@@ -149,6 +152,8 @@ namespace TouchInput
                     case 2: _pendingState.drag2 = delta; break;
                     case 3: _pendingState.drag3 = delta; break;
                 }
+
+                _dragZoneActiveMask |= (short)(1 << index);
                 _stateDirty = true;
             }
         }
@@ -157,15 +162,35 @@ namespace TouchInput
         {
             lock (_lock)
             {
+                _stateDirty |= IsDragZonesNeedReset();
                 if (!_stateDirty) return;
                 InputSystem.QueueStateEvent(this, _pendingState);
-                // Reset per-frame transient values (drag deltas)
-                _pendingState.drag0 = Vector2.zero;
-                _pendingState.drag1 = Vector2.zero;
-                _pendingState.drag2 = Vector2.zero;
-                _pendingState.drag3 = Vector2.zero;
                 _stateDirty = false;
             }
+        }
+
+        private bool IsDragZonesNeedReset()
+        {
+            // Any zone active last frame but not this frame needs a zero flush
+            short needsReset = (short)(_prevDragZoneActiveMask & ~_dragZoneActiveMask);
+            if (needsReset != 0)
+            {
+                for (int index = 0; index < 4; index++)
+                {
+                    if ((needsReset & (1 << index)) == 0) continue;
+                    switch (index)
+                    {
+                        case 0: _pendingState.drag0 = Vector2.zero; break;
+                        case 1: _pendingState.drag1 = Vector2.zero; break;
+                        case 2: _pendingState.drag2 = Vector2.zero; break;
+                        case 3: _pendingState.drag3 = Vector2.zero; break;
+                    }
+                }
+            }
+
+            _prevDragZoneActiveMask = _dragZoneActiveMask;
+            _dragZoneActiveMask = 0;
+            return needsReset != 0;
         }
     }
 }
