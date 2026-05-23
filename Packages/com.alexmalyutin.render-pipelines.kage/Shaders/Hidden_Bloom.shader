@@ -18,10 +18,13 @@ Shader "Hidden/KageRP/Bloom"
         Texture2D<float> _Depth;
 
         half4 _Params;
+        half4 _Params2;
+
         #define Scatter (_Params.x)
         #define ClampMax (_Params.y)
         #define Threshold (_Params.z)
         #define ThresholdKnee (_Params.w)
+        #define Spread (_Params2.x)
 
         struct Attributes
         {
@@ -50,7 +53,7 @@ Shader "Hidden/KageRP/Bloom"
 
         half Luminance(half3 c) { return dot(c, half3(0.2126h, 0.7152h, 0.0722h)); }
         half3 Sample(float2 uv) { return _MainTex.Sample(sampler_LinearClamp, uv, 0); }
-        half3 Sample(float2 uv, float2 offset) { return _MainTex.Sample(sampler_LinearClamp, uv + offset, 0); }
+        half3 Sample(float2 uv, float2 offset) { return Sample(uv + offset); }
 
         half3 SampleDualDown(float2 uv, float2 halfPixel)
         {
@@ -62,6 +65,7 @@ Shader "Hidden/KageRP/Bloom"
             color += Sample(uv, offset.zw);
             return color * 0.125h;
         }
+
         half3 SampleDualUp(float2 uv, float2 halfPixel)
         {
             half3 color = Sample(uv + float2(-halfPixel.x * 2.0f, 0.0f)).rgb;
@@ -84,15 +88,19 @@ Shader "Hidden/KageRP/Bloom"
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
 
+            #pragma shader_feature_fragment _ _THRESHOLD_AFTER
+
             half3 Fragment(Varyings input) : SV_Target
             {
-                half3 color = SampleDualDown(input.uv, _MainTex_TexelSize.xy);
+                half3 color = SampleDualDown(input.uv, _MainTex_TexelSize.xy * Spread);
 
-                // User controlled clamp to limit crazy high broken spec
-                color = min(ClampMax, color);
+                // Compress instead of clamp — remaps high values to a finite range
+                // preserving hue and relative brightness
+                half brightness = Luminance(color);
+                half compressed = brightness / (1.0h + brightness / ClampMax);
+                color *= compressed / max(brightness, 1e-4h);
 
                 // Thresholding
-                half brightness = Luminance(color);
                 half softness = clamp(brightness - Threshold + ThresholdKnee, 0.0, 2.0 * ThresholdKnee);
                 softness = (softness * softness) / (4.0 * ThresholdKnee + 1e-4);
                 half multiplier = max(brightness - Threshold, softness) / max(brightness, 1e-4);
@@ -113,7 +121,7 @@ Shader "Hidden/KageRP/Bloom"
 
             half3 Fragment(Varyings input) : SV_Target
             {
-                return SampleDualDown(input.uv, _MainTex_TexelSize.xy);
+                return SampleDualDown(input.uv, _MainTex_TexelSize.xy * Spread);
             }
             ENDHLSL
         }
@@ -130,7 +138,7 @@ Shader "Hidden/KageRP/Bloom"
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                return half4(SampleDualUp(input.uv, _MainTex_TexelSize.xy), Scatter);
+                return half4(SampleDualUp(input.uv, _MainTex_TexelSize.xy * Spread), Scatter);
             }
             ENDHLSL
         }
@@ -145,9 +153,12 @@ Shader "Hidden/KageRP/Bloom"
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
 
+            #pragma shader_feature_fragment _ _THRESHOLD_AFTER
+
             half3 Fragment(Varyings input) : SV_Target
             {
-                return SampleDualUp(input.uv, _MainTex_TexelSize.xy) * Scatter;
+                half3 color = SampleDualUp(input.uv, _MainTex_TexelSize.xy * Spread);
+                return color * Scatter;
             }
             ENDHLSL
         }

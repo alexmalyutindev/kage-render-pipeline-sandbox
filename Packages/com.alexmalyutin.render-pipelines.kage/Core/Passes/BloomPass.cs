@@ -18,6 +18,7 @@ namespace Rendering.KageRP
         [Range(0.0f, 2.0f)] public float Threshold = 1.0f;
         [Range(0.0f, 1.0f)] public float Scatter = 1.0f;
         [Min(0.0f)] public float ClampMax = 100.0f;
+        [Range(0.5f, 2.0f)] public float Spread = 1.0f;
 
         private readonly List<TextureHandle> _mips;
 
@@ -33,6 +34,7 @@ namespace Rendering.KageRP
             public Material Material;
             public int MipsCount;
             public Vector4 Params;
+            public Vector4 Params2;
         }
 
         public override void Record(RenderGraph renderGraph, ContextContainer frameData)
@@ -47,6 +49,7 @@ namespace Rendering.KageRP
             passData.Material = Material;
             var thresholdKnee = Threshold * 0.5f; // Hardcoded soft knee
             passData.Params = new Vector4(Scatter, ClampMax, Threshold, thresholdKnee);
+            passData.Params2 = new Vector4(Spread, 0.0f);
 
             passData.Input = cameraData.CameraActiveColor;
             builder.UseTexture(passData.Input);
@@ -73,6 +76,8 @@ namespace Rendering.KageRP
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
 
                 cmd.SetGlobalVector("_Params", data.Params);
+                cmd.SetGlobalVector("_Params2", data.Params2);
+
                 cmd.Blit(data.Input, data.Mips[0], data.Material, 0);
                 for (int i = 0; i < data.MipsCount - 1; i++) cmd.Blit(data.Mips[i], data.Mips[i + 1], data.Material, 1);
                 for (int i = data.MipsCount - 1; i > 0; i--) cmd.Blit(data.Mips[i], data.Mips[i - 1], data.Material, 2);

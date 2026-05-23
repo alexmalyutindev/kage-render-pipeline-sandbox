@@ -78,7 +78,8 @@ MonoBehaviour:
       data:
         IsActive: 1
         Material: {fileID: 2100000, guid: 2e8aa6483e01942cfa22eb81026ff7fc, type: 2}
-        BlurTaps: 3
+        BlurTaps: 2
         Threshold: 1
-        Scatter: 0.9
-        ClampMax: 3
+        Scatter: 0.7
+        ClampMax: 5
+        Spread: 2
