@@ -23,6 +23,7 @@ MonoBehaviour:
   - rid: 6020882026761289782
   - rid: 6020882086145032377
   - rid: 6020882155858821181
+  - rid: 6020882227324518455
   - rid: 6020882155858821185
   references:
     version: 2
@@ -72,3 +73,12 @@ MonoBehaviour:
         _settings:
           OcclusionRadius: 1
           OcclusionThickness: 0.9
+    - rid: 6020882227324518455
+      type: {class: BloomPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
+      data:
+        IsActive: 1
+        Material: {fileID: 2100000, guid: 2e8aa6483e01942cfa22eb81026ff7fc, type: 2}
+        BlurTaps: 3
+        Threshold: 1
+        Scatter: 0.9
+        ClampMax: 3
