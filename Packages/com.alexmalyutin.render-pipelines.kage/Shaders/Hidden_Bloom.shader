@@ -147,7 +147,7 @@ Shader "Hidden/KageRP/Bloom"
 
             half3 Fragment(Varyings input) : SV_Target
             {
-                return SampleDualUp(input.uv, _MainTex_TexelSize.xy);
+                return SampleDualUp(input.uv, _MainTex_TexelSize.xy) * Scatter;
             }
             ENDHLSL
         }
