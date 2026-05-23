@@ -151,7 +151,7 @@ Shader "KageRP/Opaque"
                 half occlusion = 1.0h;
                 #endif
 
-                half3 normalWS = TransformTangentToWorld(normalTS, tbn, false);
+                half3 normalWS = TransformTangentToWorld(normalTS, tbn, true);
 
                 InputData inputData;
                 inputData.positionWS = input.positionWS;
