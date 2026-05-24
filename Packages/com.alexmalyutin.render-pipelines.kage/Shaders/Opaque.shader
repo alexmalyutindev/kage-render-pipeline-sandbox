@@ -124,7 +124,7 @@ Shader "KageRP/Opaque"
                 return output;
             }
 
-            GBuffer Fragment(Varyings input)
+            GBuffer Fragment(Varyings input, bool isFrontFace : SV_IsFrontFace)
             {
                 half3 viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
                 half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
@@ -152,6 +152,7 @@ Shader "KageRP/Opaque"
                 #endif
 
                 half3 normalWS = TransformTangentToWorld(normalTS, tbn, true);
+                if (isFrontFace == false) normalWS = -normalWS;
 
                 InputData inputData;
                 inputData.positionWS = input.positionWS;

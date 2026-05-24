@@ -1,9 +1,9 @@
 {
-  "name": "com.alexmalyutin.render-pipelines.kagerp",
+  "name": "com.alexmalyutin.render-pipelines.kage",
   "displayName": "KageRP",
   "version": "1.0.0",
   "unity": "6000.3",
-  "description": "影",
+  "description": "\u5f71",
   "dependencies": {
     "com.unity.render-pipelines.core": "17.3.0"
   },

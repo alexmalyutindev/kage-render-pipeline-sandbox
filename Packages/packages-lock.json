@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.alexmalyutin.render-pipelines.kagerp": {
+    "com.alexmalyutin.render-pipelines.kage": {
       "version": "file:com.alexmalyutin.render-pipelines.kage",
       "depth": 0,
       "source": "embedded",
