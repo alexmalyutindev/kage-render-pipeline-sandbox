@@ -129,7 +129,7 @@ Shader "Hidden/KageRP/PointLight"
                 }
 
                 BRDFData brdf = InitBRDFData(data);
-                half3 color = SingleLightPBR_Opt(brdf, inputData, light);
+                half3 color = SingleLightPBR(brdf, inputData, light);
                 return half4(color, 0.0h);
             }
             ENDHLSL

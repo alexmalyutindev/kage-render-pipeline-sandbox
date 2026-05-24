@@ -83,7 +83,7 @@ half3 SingleLightPBR(BRDFData brdfData, InputData inputData, Light light)
     half3 L = light.direction;
     half3 H = normalize(V + L);
     half NdotL = max(0.0h, dot(N, L));
-    float NdotH = max(0.0h, dot(N, H));
+    float NdotH = saturate(dot(N, H));
 
     float specularTerm = specularNormalization * pow(NdotH, specularPower);
     half3 specular = brdfData.F0 * light.color * specularTerm;
@@ -106,7 +106,7 @@ half3 SingleLightPBR_TwoSide(BRDFData brdfData, InputData inputData, Light light
     half3 L = light.direction;
     half3 H = normalize(float3(V) + L);
     half NdotL = abs(dot(N, L));
-    half NdotH = max(0.0h, dot(float3(N), H));
+    half NdotH = saturate(dot(float3(N), H));
 
     float specularTerm = specularNormalization * pow(NdotH, specularPower);
     half3 specular = brdfData.F0 * light.color * specularTerm;

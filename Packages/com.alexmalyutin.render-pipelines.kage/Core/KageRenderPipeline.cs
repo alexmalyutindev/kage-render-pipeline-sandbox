@@ -117,6 +117,7 @@ namespace Rendering.KageRP
                 catch (Exception e)
                 {
                     Debug.LogException(e);
+                    _renderGraph.Cleanup();
                 }
                 finally
                 {
