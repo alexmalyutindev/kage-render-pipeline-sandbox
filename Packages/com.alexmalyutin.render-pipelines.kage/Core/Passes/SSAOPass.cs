@@ -28,7 +28,9 @@ namespace Rendering.KageRP
 
             public Material Material;
             public TextureHandle Occlusion;
-            public TextureHandle SSAODepth;
+            public TextureHandle MinMaxDepth;
+            public TextureHandle VarianceDepth;
+
             public TextureHandle Temp;
             public Vector4 Params;
         }
@@ -72,10 +74,15 @@ namespace Rendering.KageRP
                 passData.Temp = renderGraph.CreateTexture(ssaoDesc);
                 builder.UseTexture(passData.Temp, AccessFlags.ReadWrite);
 
-                ssaoDesc.name = "_SSAO_Depth";
-                ssaoDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RHalf, false);
-                passData.SSAODepth = renderGraph.CreateTexture(ssaoDesc);
-                builder.UseTexture(passData.SSAODepth, AccessFlags.ReadWrite);
+                ssaoDesc.name = "_MinMaxDepth";
+                ssaoDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGHalf, false);
+                passData.MinMaxDepth = renderGraph.CreateTexture(ssaoDesc);
+                builder.UseTexture(passData.MinMaxDepth, AccessFlags.ReadWrite);
+
+                ssaoDesc.name = "_VarianceDepth";
+                ssaoDesc.format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGHalf, false);
+                passData.VarianceDepth = renderGraph.CreateTexture(ssaoDesc);
+                builder.UseTexture(passData.VarianceDepth, AccessFlags.ReadWrite);
 
                 builder.SetGlobalTextureAfterPass(passData.Occlusion, Shader.PropertyToID("_OcclusionTexture"));
             }
@@ -94,12 +101,14 @@ namespace Rendering.KageRP
                 }
 
                 // TODO: Use Linear Depth from GBuffer2.z!!!
-                cmd.Blit(data.SceneDepth, data.SSAODepth);
+                cmd.Blit(data.SceneDepth, data.MinMaxDepth, data.Material, 1);
+                cmd.Blit(data.SceneDepth, data.VarianceDepth, data.Material, 2);
 
                 // AO
-                cmd.SetGlobalTexture("_Depth", data.SSAODepth);
                 cmd.SetGlobalVector("_GTAO_Params", data.Params);
-                cmd.Blit(data.SceneDepth, data.Occlusion, data.Material, 1);
+                cmd.SetGlobalTexture("_MinMaxDepth", data.MinMaxDepth);
+                cmd.SetGlobalTexture("_VarianceDepth", data.VarianceDepth);
+                cmd.Blit(data.SceneDepth, data.Occlusion, data.Material, 3);
 
                 // Blur
                 cmd.SetGlobalVector("_Direction", new Vector4(1, 0));

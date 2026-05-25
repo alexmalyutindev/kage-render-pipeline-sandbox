@@ -171,8 +171,10 @@ Shader "KageRP/Opaque"
                 materialData.alpha = 1.0h;
                 materialData.emission = 0.0h;
 
+
                 BRDFData brdf = InitBRDFData(materialData);
                 half3 color = MobilePBR(brdf, inputData);
+                // color = _OcclusionTexture.Sample(sampler_PointClamp, inputData.normalizedScreenUV);
                 return OutputGBuffer(color, materialData, inputData);
             }
             ENDHLSL
