@@ -33,6 +33,7 @@ namespace Rendering.KageRP
 
             public TextureHandle Temp;
             public Vector4 Params;
+            public Texture BayerMatrix;
         }
 
         public override void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline)
@@ -56,6 +57,7 @@ namespace Rendering.KageRP
             {
                 passData.Material = _defaultResources.SSAOMaterial;
                 passData.Params = new Vector4(_settings.OcclusionRadius, _settings.OcclusionThickness);
+                passData.BayerMatrix = _defaultResources.BayerMatrix;
 
                 passData.SceneDepth = prevFrameDepth;
 
@@ -108,6 +110,7 @@ namespace Rendering.KageRP
                 cmd.SetGlobalVector("_GTAO_Params", data.Params);
                 cmd.SetGlobalTexture("_MinMaxDepth", data.MinMaxDepth);
                 cmd.SetGlobalTexture("_VarianceDepth", data.VarianceDepth);
+                cmd.SetGlobalTexture("_BayerMatrix", data.BayerMatrix);
                 cmd.Blit(data.SceneDepth, data.Occlusion, data.Material, 3);
 
                 // Blur

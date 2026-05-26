@@ -10,6 +10,7 @@ namespace Rendering.KageRP
 
         [Header("Textures")]
         public Texture BRDF_LUT;
+        public Texture BayerMatrix;
 
         [Header("Deferred Lighting")]
         public Mesh PointLightMesh;

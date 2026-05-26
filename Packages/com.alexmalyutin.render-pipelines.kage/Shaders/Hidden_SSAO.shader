@@ -74,20 +74,19 @@ Shader "Hidden/KageRP/SSAO"
 
             half Fragment(Varyings input) : SV_Target
             {
-                const int kernelSize = 3;
+                const int kernelSize = 4;
                 const half halfKernel = (half(kernelSize) - 1.0h) * 0.5h;
 
                 half centerDepth = _MinMaxDepth.Sample(sampler_LinearClamp, input.uv).y;
 
                 half result = 0.0h;
                 half totalWeight = 0.0h;
-                for (int i = 0; i < kernelSize; i++)
+                UNITY_UNROLL for (int i = 0; i < kernelSize; i++)
                 {
-                    // TODO: Use depth guided blur!
-                    float2 offset = (i - halfKernel) * _Direction * _MainTex_TexelSize.xy * 1.33f;
+                    float2 offset = (i - halfKernel) * _Direction * _MainTex_TexelSize.xy;
                     half sample = _MainTex.Sample(sampler_LinearClamp, input.uv + offset);
                     half depth = _MinMaxDepth.Sample(sampler_LinearClamp, input.uv + offset).y;
-                    half weight = exp2(-20.0h * abs(centerDepth - depth));
+                    half weight = max(0.0001h, exp2(-20.0h * abs(centerDepth - depth)));
                     result += sample * weight;
                     totalWeight += weight;
                 }
@@ -172,6 +171,8 @@ Shader "Hidden/KageRP/SSAO"
             HLSLPROGRAM
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
+            
+            Texture2D<half> _BayerMatrix;
 
             float4 _GTAO_Params;
 
