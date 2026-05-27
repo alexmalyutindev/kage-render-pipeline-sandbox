@@ -1,4 +1,4 @@
-Shader "Hidden/KageRP/PointLight"
+Shader "Hidden/KageRP/DeferredLighting"
 {
     Properties {}
     SubShader
@@ -9,15 +9,73 @@ Shader "Hidden/KageRP/PointLight"
         }
         LOD 100
 
-        HLSLINCLUDE
-        #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "DeferredLighting Stencil"
+            }
 
-        // TODO: Move to include
-        #define _LightPositionWS (UNITY_MATRIX_M[0].xyz)
-        #define _LightColor (UNITY_MATRIX_M[1].rgb)
-        #define _LightRadius (UNITY_MATRIX_M._m20)
-        #define _LightDistanceAttenuation (UNITY_MATRIX_M._m30_m31)
-        ENDHLSL
+            Name "PointLight Stencil"
+
+            // Rendering deferred lights using Stencil culling algorithm
+            // ref. https://kayru.org/articles/deferred-stencil/
+            Stencil
+            {
+                Ref [_DeferredLight_StencilMask]
+                ReadMask [_DeferredLight_StencilMask]
+                WriteMask [_DeferredLight_StencilMask]
+
+                Comp Always
+                Pass Keep
+                Fail Keep
+
+                // Mark pixels where front faces fail depth
+                ZFail Replace
+            }
+
+            ColorMask 0
+
+            Cull Back
+            Blend Off
+            ZWrite Off
+            ZTest LEqual
+
+            HLSLPROGRAM
+            #pragma vertex Vertex
+            #pragma fragment Fragment
+
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+
+            #define _LightPositionWS (UNITY_MATRIX_M[0].xyz)
+            #define _LightColor (UNITY_MATRIX_M[1].rgb)
+            #define _LightRadius (UNITY_MATRIX_M._m20)
+            #define _LightDistanceAttenuation (UNITY_MATRIX_M._m30_m31)
+
+            struct Attributes
+            {
+                half3 positionOS : POSITION;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+            };
+
+            Varyings Vertex(Attributes input)
+            {
+                Varyings output;
+                float3 positionWS = _LightPositionWS + input.positionOS * _LightRadius;
+                output.positionCS = TransformWorldToHClip(positionWS);
+                return output;
+            }
+
+            half4 Fragment(Varyings input) : SV_Target
+            {
+                return 0.0h;
+            }
+            ENDHLSL
+        }
 
         Pass
         {
@@ -53,6 +111,11 @@ Shader "Hidden/KageRP/PointLight"
 
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
+
+            #define _LightPositionWS (UNITY_MATRIX_M[0].xyz)
+            #define _LightColor (UNITY_MATRIX_M[1].rgb)
+            #define _LightRadius (UNITY_MATRIX_M._m20)
+            #define _LightDistanceAttenuation (UNITY_MATRIX_M._m30_m31)
 
             FRAMEBUFFER_INPUT_HALF(0);
             FRAMEBUFFER_INPUT_HALF(1);
@@ -94,16 +157,11 @@ Shader "Hidden/KageRP/PointLight"
                     float3 lightDirectionVS = lightPositionVS - scenePositionVS;
 
                     float distanceSqr = dot(lightDirectionVS, lightDirectionVS);
-                    float lightAtten = rcp(distanceSqr);
-                    // NOTE: GetPunctualLightDistanceAttenuation: distanceAttenuationFloat.x
-                    half factor = half(distanceSqr * _LightDistanceAttenuation.x);
-                    half smoothFactor = saturate(half(1.0h) - factor * factor);
-                    smoothFactor = smoothFactor * smoothFactor;
 
                     light.color = _LightColor;
                     light.direction = lightDirectionVS * rsqrt(distanceSqr);
                     light.shadowAttenuation = 1.0h;
-                    light.distanceAttenuation = lightAtten * smoothFactor;
+                    light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightDistanceAttenuation.xx);
                 }
 
                 InputData inputData;
@@ -137,13 +195,8 @@ Shader "Hidden/KageRP/PointLight"
 
         Pass
         {
-            Tags
-            {
-                "LightMode" = "DeferredLighting Stencil"
-            }
-
-            Name "PointLight Stencil"
-
+            Name "SpotLight Stencil"
+            
             // Rendering deferred lights using Stencil culling algorithm
             // ref. https://kayru.org/articles/deferred-stencil/
             Stencil
@@ -172,8 +225,15 @@ Shader "Hidden/KageRP/PointLight"
             #pragma fragment Fragment
 
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
 
-            Texture2D<float> _GBuffer_Depth;
+            FRAMEBUFFER_INPUT_HALF(0);
+            FRAMEBUFFER_INPUT_HALF(1);
+
+            float4 _LightColor;
+            float4 _SpotLightPositionWS;
+            float4 _SpotLightDirectionWS;
+            float4 _SpotLightAttenuation;
 
             struct Attributes
             {
@@ -185,17 +245,131 @@ Shader "Hidden/KageRP/PointLight"
                 float4 positionCS : SV_POSITION;
             };
 
+
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
-                float3 positionWS = _LightPositionWS + input.positionOS * _LightRadius;
-                output.positionCS = TransformWorldToHClip(positionWS);
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 return output;
             }
 
             half4 Fragment(Varyings input) : SV_Target
             {
                 return 0.0h;
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "SpotLight"
+
+            // Rendering deferred lights using Stencil culling algorithm
+            // ref. https://kayru.org/articles/deferred-stencil/
+            Stencil
+            {
+                Ref 0 // 0000_0000
+                ReadMask [_DeferredLight_StencilMask] // 0000_0001
+                WriteMask [_DeferredLight_StencilMask] // 0000_0001
+                Comp Equal
+                Pass Replace
+                Fail Replace
+            }
+
+            Blend One One
+            ColorMask RGB
+
+            Cull Front
+            ZWrite Off
+            ZTest GEqual
+
+            HLSLPROGRAM
+            #pragma vertex Vertex
+            #pragma fragment Fragment
+
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
+
+            FRAMEBUFFER_INPUT_HALF(0);
+            FRAMEBUFFER_INPUT_HALF(1);
+
+            float4 _LightColor;
+            float4 _SpotLightPositionWS;
+            float4 _SpotLightDirectionWS;
+            float4 _SpotLightAttenuation;
+
+            struct Attributes
+            {
+                half3 positionOS : POSITION;
+            };
+
+            struct Varyings
+            {
+                float3 positionVS : TEXCOORD0;
+                float3 lightPositionVS : TEXCOORD1;
+                float4 positionCS : SV_POSITION;
+            };
+
+
+            Varyings Vertex(Attributes input)
+            {
+                Varyings output;
+                float3 positionWS = TransformObjectToWorld(input.positionOS);
+                output.positionVS = TransformWorldToView(positionWS);
+                output.lightPositionVS = TransformWorldToView(_SpotLightPositionWS);
+                output.positionCS = TransformWorldToHClip(positionWS);
+                return output;
+            }
+
+            half4 Fragment(Varyings input) : SV_Target
+            {
+                half4 gBuffer1 = LOAD_FRAMEBUFFER_INPUT(0, input.positionCS);
+                half4 gBuffer2 = LOAD_FRAMEBUFFER_INPUT(1, input.positionCS);
+
+                GBufferData gBuffer = ReadGBuffer(gBuffer1, gBuffer2);
+                float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z);
+                scenePositionVS *= gBuffer.depth;
+                float3 scenePositionWS = TransformViewToWorld(scenePositionVS);
+
+                Light light;
+                {
+                    float3 lightVector = input.lightPositionVS - scenePositionVS;
+                    float distanceSqr = max(dot(lightVector, lightVector), HALF_MIN);
+                    half3 lightDirectionWS = TransformViewToWorldDir(half3(lightVector * rsqrt(distanceSqr)));
+
+                    light.color = _LightColor;
+                    light.direction = lightDirectionWS;
+                    light.shadowAttenuation = 1.0h;
+                    light.distanceAttenuation =
+                        DistanceAttenuation(distanceSqr, _SpotLightAttenuation.xy) *
+                        AngleAttenuation(_SpotLightDirectionWS.xyz, lightDirectionWS, _SpotLightAttenuation.zw);
+                }
+
+                InputData inputData;
+                {
+                    // NOTE: All computation made in ViewSpace!
+                    inputData.positionWS = scenePositionWS;
+                    inputData.normalWS = TransformViewToWorldDir(gBuffer.normalVS);
+                    inputData.viewDirectionWS = -SafeNormalize(scenePositionWS);
+                    inputData.shadowCoord = 0.0f;
+                    inputData.bakedGI = 0.0h;
+                    inputData.normalizedScreenUV = 0.0h;
+                }
+
+                MaterialData data;
+                {
+                    data.albedo = gBuffer.albedo;
+                    data.occlusion = gBuffer.occlusion;
+                    data.metallic = gBuffer.metallic;
+                    data.roughness = gBuffer.roughness;
+                    data.emission = 0.0h;
+                    data.normalTS = half3(0.0h, 0.0h, 1.0h);
+                    data.alpha = 0.0h;
+                }
+
+                BRDFData brdf = InitBRDFData(data);
+                half3 color = SingleLightPBR(brdf, inputData, light);
+                return half4(color, 0.0h);
             }
             ENDHLSL
         }

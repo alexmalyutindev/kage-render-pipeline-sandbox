@@ -105,7 +105,7 @@ namespace Rendering.KageRP
                 for (int i = 0, lightIter = 0; i < visibleLights.Length && lightIter < additionalLightCount; i++)
                 {
                     ref var light = ref visibleLights.UnsafeElementAtMutable(i);
-                    if (light.lightType is not LightType.Point) continue;
+                    if (light.lightType is not (LightType.Point or LightType.Spot)) continue;
 
                     var lightLocalToWorld = light.localToWorldMatrix;
                     var position = lightLocalToWorld.GetColumn(3);
@@ -113,13 +113,34 @@ namespace Rendering.KageRP
 
                     var range = light.range;
                     var rangeSq = Mathf.Max(range * range, 0.0001f);
+                    
+                    // Cone attenuation: URP packs cos(innerAngle/2) and the
+                    // 1/(cos(inner)-cos(outer)) falloff scale into zw.
+                    var spotAttenZW = new Vector2(0.0f, 1.0f);
+                    if (light.lightType == LightType.Spot)
+                    {
+                        var unityLight = light.light;
+                        float outerAngle = unityLight.spotAngle;
+                        float innerAngle = unityLight.innerSpotAngle;
+
+                        float cosOuter = Mathf.Cos(outerAngle * 0.5f * Mathf.Deg2Rad);
+                        float cosInner = Mathf.Cos(innerAngle * 0.5f * Mathf.Deg2Rad);
+
+                        float cosRangeRcp = 1.0f / Mathf.Max(cosInner - cosOuter, 0.0001f);
+
+                        // zw matches URP's SLightData layout:
+                        // z = -cosOuter * cosRangeRcp  (additive bias term)
+                        // w =  cosRangeRcp             (scale term)
+                        // In shader: saturate(dot(L, spotDir) * w + z)
+                        spotAttenZW = new Vector2(-cosOuter * cosRangeRcp, cosRangeRcp);
+                    }
 
                     additionalLightsData[lightIter] = new ShaderTypes.LightData
                     {
                         color = light.finalColor,
                         position = position,
                         spotDirection = new Vector4(-direction.x, -direction.y, -direction.z, 0.0f),
-                        attenuation = new Vector4(1.0f / rangeSq, 0.25f, 0.0f, 1.0f),
+                        attenuation = new Vector4(1.0f / rangeSq, 0.25f, spotAttenZW.x, spotAttenZW.y),
                     };
                     lightIter++;
                 }

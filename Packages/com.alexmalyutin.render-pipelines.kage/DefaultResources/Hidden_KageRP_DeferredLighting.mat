@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Hidden_MyRP_PointLight
+  m_Name: Hidden_KageRP_DeferredLighting
   m_Shader: {fileID: 4800000, guid: f64af7900ef346df8fe018a997e306c2, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0

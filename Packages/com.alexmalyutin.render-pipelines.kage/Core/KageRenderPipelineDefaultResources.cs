@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Rendering.KageRP
 {
@@ -12,8 +13,9 @@ namespace Rendering.KageRP
         public Texture BRDF_LUT;
         public Texture BayerMatrix;
 
-        [Header("Deferred Lighting")]
-        public Mesh PointLightMesh;
+        [FormerlySerializedAs("PointLightMesh")] [Header("Deferred Lighting")]
+        public Mesh PointLightVolume;
+        public Mesh SpotLightVolume;
         public Material PointLightMaterial;
 
         [Space]

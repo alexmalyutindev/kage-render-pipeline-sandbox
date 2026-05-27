@@ -12,6 +12,30 @@ struct Light
     half distanceAttenuation;
 };
 
+half DistanceAttenuation(float distanceSqr, half2 distanceAttenuation)
+{
+    float lightAttenuation = rcp(distanceSqr);
+    half factor = half(distanceSqr * distanceAttenuation.x);
+    half smoothFactor = saturate(half(1.0h) - factor * factor);
+    smoothFactor = smoothFactor * smoothFactor;
+    return lightAttenuation * smoothFactor;
+}
+
+half AngleAttenuation(half3 spotDirection, half3 lightDirection, half2 spotAttenuation)
+{
+    // Spot Attenuation with a linear falloff can be defined as
+    // (SdotL - cosOuterAngle) / (cosInnerAngle - cosOuterAngle)
+    // This can be rewritten as
+    // invAngleRange = 1.0 / (cosInnerAngle - cosOuterAngle)
+    // SdotL * invAngleRange + (-cosOuterAngle * invAngleRange)
+    // SdotL * spotAttenuation.x + spotAttenuation.y
+
+    // If we precompute the terms in a MAD instruction
+    half SdotL = dot(spotDirection, lightDirection);
+    half atten = saturate(SdotL * spotAttenuation.x + spotAttenuation.y);
+    return atten * atten;
+}
+
 uint GetPerObjectLightIndexOffset()
 {
     #if USE_STRUCTURED_BUFFER_FOR_LIGHT_DATA
@@ -41,24 +65,19 @@ Light GetAdditionalPerObjectLight(int perObjectLightIndex, float3 positionWS)
     float4 lightPositionWS = _AdditionalLightsBuffer[perObjectLightIndex].position;
     half3 color = _AdditionalLightsBuffer[perObjectLightIndex].color.rgb;
     half4 distanceAndSpotAttenuation = _AdditionalLightsBuffer[perObjectLightIndex].attenuation;
-    // TODO: Add SpotLight support! 
     half4 spotDirection = _AdditionalLightsBuffer[perObjectLightIndex].spotDirection;
 
     float3 lightVector = lightPositionWS.xyz - positionWS * lightPositionWS.w;
     float distanceSqr = max(dot(lightVector, lightVector), HALF_MIN);
     half3 lightDirection = half3(lightVector * rsqrt(distanceSqr));
 
-    float lightAttenuation = rcp(distanceSqr);
-    half factor = half(distanceSqr * distanceAndSpotAttenuation.x);
-    half smoothFactor = saturate(half(1.0h) - factor * factor);
-    smoothFactor = smoothFactor * smoothFactor;
-    half distanceAttenuation = lightAttenuation * smoothFactor;
-
     Light light;
     light.color = color;
     light.direction = lightDirection;
     light.shadowAttenuation = 1.0h;
-    light.distanceAttenuation = distanceAttenuation;
+    light.distanceAttenuation = 
+        DistanceAttenuation(distanceSqr, distanceAndSpotAttenuation.xy) * 
+        AngleAttenuation(spotDirection.xyz, lightDirection, distanceAndSpotAttenuation.zw);
 
     return light;
 }

@@ -16,6 +16,7 @@ MonoBehaviour:
   BlitColorAndDepth: {fileID: 0}
   BRDF_LUT: {fileID: 2800000, guid: b157dedcbf48b4f43a35ab0070deb854, type: 3}
   BayerMatrix: {fileID: 2800000, guid: 847ba14d3901d44a4a334f4db55654b1, type: 3}
-  PointLightMesh: {fileID: 5205256992746814640, guid: 1ea5caff763214e25a5a8f2c72739852, type: 3}
+  PointLightVolume: {fileID: 5309274480578610512, guid: 368f03db2a3b94e1baf76ea1f11ede93, type: 3}
+  SpotLightVolume: {fileID: 5314695043341871270, guid: 368f03db2a3b94e1baf76ea1f11ede93, type: 3}
   PointLightMaterial: {fileID: 2100000, guid: fde52416979614a2f84dee312c9652ae, type: 2}
   SSAOMaterial: {fileID: 2100000, guid: 5b4c51dc0ec8941738f11a7bc772e209, type: 2}
