@@ -44,10 +44,10 @@ namespace Rendering.KageRP
             public int PointLightsCount;
             public VisibleLight[] PointLights;
 
-            public int SpotLightCount;
+            public int SpotLightsCount;
             public VisibleLight[] SpotLights;
 
-            public Mesh PointLightMesh;
+            public Mesh PointLightVolume;
             public Mesh SpotLightVolume;
 
             public Material PointLightMaterial;
@@ -69,13 +69,13 @@ namespace Rendering.KageRP
             passData.View = cameraData.Camera.worldToCameraMatrix;
             passData.Proj = cameraData.Camera.projectionMatrix;
 
-            passData.PointLightMesh = _defaultResources.PointLightVolume;
+            passData.PointLightVolume = _defaultResources.PointLightVolume;
             passData.PointLightMaterial = _defaultResources.PointLightMaterial;
             passData.PointLightsCount = deferredLightData.PointLightsCount;
             passData.PointLights = deferredLightData.PointLights;
 
             passData.SpotLightVolume = _defaultResources.SpotLightVolume;
-            passData.SpotLightCount = deferredLightData.SpotLightsCount;
+            passData.SpotLightsCount = deferredLightData.SpotLightsCount;
             passData.SpotLights = deferredLightData.SpotLights;
 
             builder.SetInputAttachment(gBufferData.GBuffer1, 0, AccessFlags.Read);
@@ -92,16 +92,48 @@ namespace Rendering.KageRP
 
                 // TODO: Draw light by group of 8, using different stencil bit.
                 cmd.SetGlobalInteger("_DeferredLight_StencilMask", 1);
+
                 for (int lightIndex = 0; lightIndex < data.PointLightsCount; lightIndex++)
                 {
-                    var matrix = CreatePointLightData(ref data.PointLights[lightIndex]);
+                    ref var visibleLight = ref data.PointLights[lightIndex];
+                    var localToWorld = visibleLight.localToWorldMatrix;
+                    var position = localToWorld.GetColumn(3);
+                    var direction = localToWorld.GetColumn(2);
+
+                    float range = visibleLight.range;
+                    var matrix = Matrix4x4.TRS(
+                        position,
+                        Quaternion.identity,
+                        new Vector3(range, range, range)
+                    );
+
+                    float rangeSq = Mathf.Max(range * range, 0.0001f);
+                    var attenuation = new Vector4(1.0f / rangeSq, 0.25f, 0.0f, 1.0f);
+                    if (visibleLight.lightType == LightType.Spot)
+                    {
+                        float outerAngle = visibleLight.light.spotAngle;
+                        float innerAngle = visibleLight.light.innerSpotAngle;
+                        float cosOuter = Mathf.Cos(outerAngle * 0.5f * Mathf.Deg2Rad);
+                        float cosInner = Mathf.Cos(innerAngle * 0.5f * Mathf.Deg2Rad);
+                        float cosRangeRcp = 1.0f / Mathf.Max(cosInner - cosOuter, 0.0001f);
+                        // TODO: Check shader code to bring into conformity spot light math!
+                        attenuation.z = cosRangeRcp;
+                        attenuation.w = -cosOuter * cosRangeRcp;
+                    }
+
+                    cmd.SetGlobalVector("_LightColor", visibleLight.finalColor);
+                    cmd.SetGlobalVector("_LightPositionWS", new Vector4(position.x, position.y, position.z, 1.0f));
+                    cmd.SetGlobalVector("_LightDirectionWS", new Vector4(-direction.x, -direction.y, -direction.z, 0.0f));
+                    cmd.SetGlobalVector("_LightAttenuation", attenuation);
+
+                    
                     // Stencil
-                    cmd.DrawMesh(data.PointLightMesh, matrix, data.PointLightMaterial, 0, 0);
+                    cmd.DrawMesh(data.PointLightVolume, matrix, data.PointLightMaterial, 0, 0);
                     // Lighting
-                    cmd.DrawMesh(data.PointLightMesh, matrix, data.PointLightMaterial, 0, 1);
+                    cmd.DrawMesh(data.PointLightVolume, matrix, data.PointLightMaterial, 0, 1);
                 }
 
-                for (int lightIndex = 0; lightIndex < data.SpotLightCount; lightIndex++)
+                for (int lightIndex = 0; lightIndex < data.SpotLightsCount; lightIndex++)
                 {
                     ref var visibleLight = ref data.SpotLights[lightIndex];
                     var localToWorld = visibleLight.localToWorldMatrix;
@@ -125,13 +157,14 @@ namespace Rendering.KageRP
                     float cosRangeRcp = 1.0f / Mathf.Max(cosInner - cosOuter, 0.0001f);
 
                     cmd.SetGlobalVector("_LightColor", visibleLight.finalColor);
-                    cmd.SetGlobalVector("_SpotLightPositionWS", new Vector4(position.x, position.y, position.z, 1.0f));
-                    cmd.SetGlobalVector("_SpotLightDirectionWS", new Vector4(-direction.x, -direction.y, -direction.z, 0.0f));
-                    cmd.SetGlobalVector("_SpotLightAttenuation", new Vector4(1.0f / rangeSq, 0.25f, cosRangeRcp, -cosOuter * cosRangeRcp));
+                    cmd.SetGlobalVector("_LightPositionWS", new Vector4(position.x, position.y, position.z, 1.0f));
+                    cmd.SetGlobalVector("_LightDirectionWS", new Vector4(-direction.x, -direction.y, -direction.z, 0.0f));
+                    cmd.SetGlobalVector("_LightAttenuation", new Vector4(1.0f / rangeSq, 0.25f, cosRangeRcp, -cosOuter * cosRangeRcp));
 
+                    // Stencil
+                    cmd.DrawMesh(data.SpotLightVolume, matrix, data.PointLightMaterial, 0, 0);
                     // Lighting
                     cmd.DrawMesh(data.SpotLightVolume, matrix, data.PointLightMaterial, 0, 2);
-                    cmd.DrawMesh(data.SpotLightVolume, matrix, data.PointLightMaterial, 0, 3);
                 }
             });
         }

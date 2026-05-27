@@ -9,6 +9,14 @@ Shader "Hidden/KageRP/DeferredLighting"
         }
         LOD 100
 
+        HLSLINCLUDE
+        float4 _LightColor;
+        float4 _LightPositionWS;
+        float4 _LightDirectionWS;
+        // Precomputed data: (1.0f / rangeSq, 0.25f, cosRangeRcp, -cosOuter * cosRangeRcp)
+        float4 _LightAttenuation;
+        ENDHLSL
+
         Pass
         {
             Tags
@@ -47,11 +55,6 @@ Shader "Hidden/KageRP/DeferredLighting"
 
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
 
-            #define _LightPositionWS (UNITY_MATRIX_M[0].xyz)
-            #define _LightColor (UNITY_MATRIX_M[1].rgb)
-            #define _LightRadius (UNITY_MATRIX_M._m20)
-            #define _LightDistanceAttenuation (UNITY_MATRIX_M._m30_m31)
-
             struct Attributes
             {
                 half3 positionOS : POSITION;
@@ -65,8 +68,7 @@ Shader "Hidden/KageRP/DeferredLighting"
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
-                float3 positionWS = _LightPositionWS + input.positionOS * _LightRadius;
-                output.positionCS = TransformWorldToHClip(positionWS);
+                output.positionCS = TransformObjectToHClip(input.positionOS);
                 return output;
             }
 
@@ -91,8 +93,8 @@ Shader "Hidden/KageRP/DeferredLighting"
             Stencil
             {
                 Ref 0 // 0000_0000
-                ReadMask [_DeferredLight_StencilMask] // 0000_0001
-                WriteMask [_DeferredLight_StencilMask] // 0000_0001
+                ReadMask [_DeferredLight_StencilMask]
+                WriteMask [_DeferredLight_StencilMask]
                 Comp Equal
                 Pass Replace
                 Fail Replace
@@ -112,11 +114,6 @@ Shader "Hidden/KageRP/DeferredLighting"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
             #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
 
-            #define _LightPositionWS (UNITY_MATRIX_M[0].xyz)
-            #define _LightColor (UNITY_MATRIX_M[1].rgb)
-            #define _LightRadius (UNITY_MATRIX_M._m20)
-            #define _LightDistanceAttenuation (UNITY_MATRIX_M._m30_m31)
-
             FRAMEBUFFER_INPUT_HALF(0);
             FRAMEBUFFER_INPUT_HALF(1);
 
@@ -135,7 +132,7 @@ Shader "Hidden/KageRP/DeferredLighting"
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
-                float3 positionWS = _LightPositionWS + input.positionOS * _LightRadius;
+                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.lightPositionVS = TransformWorldToView(_LightPositionWS);
                 output.positionVS = TransformWorldToView(positionWS);
                 output.positionCS = TransformWorldToHClip(positionWS);
@@ -161,7 +158,8 @@ Shader "Hidden/KageRP/DeferredLighting"
                     light.color = _LightColor;
                     light.direction = lightDirectionVS * rsqrt(distanceSqr);
                     light.shadowAttenuation = 1.0h;
-                    light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightDistanceAttenuation.xx);
+                    // TODO: Add Spot angle atten to completely unify shader!
+                    light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation.xy);
                 }
 
                 InputData inputData;
@@ -195,73 +193,6 @@ Shader "Hidden/KageRP/DeferredLighting"
 
         Pass
         {
-            Name "SpotLight Stencil"
-            
-            // Rendering deferred lights using Stencil culling algorithm
-            // ref. https://kayru.org/articles/deferred-stencil/
-            Stencil
-            {
-                Ref [_DeferredLight_StencilMask]
-                ReadMask [_DeferredLight_StencilMask]
-                WriteMask [_DeferredLight_StencilMask]
-
-                Comp Always
-                Pass Keep
-                Fail Keep
-
-                // Mark pixels where front faces fail depth
-                ZFail Replace
-            }
-
-            ColorMask 0
-
-            Cull Back
-            Blend Off
-            ZWrite Off
-            ZTest LEqual
-
-            HLSLPROGRAM
-            #pragma vertex Vertex
-            #pragma fragment Fragment
-
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
-
-            FRAMEBUFFER_INPUT_HALF(0);
-            FRAMEBUFFER_INPUT_HALF(1);
-
-            float4 _LightColor;
-            float4 _SpotLightPositionWS;
-            float4 _SpotLightDirectionWS;
-            float4 _SpotLightAttenuation;
-
-            struct Attributes
-            {
-                half3 positionOS : POSITION;
-            };
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-            };
-
-
-            Varyings Vertex(Attributes input)
-            {
-                Varyings output;
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                return output;
-            }
-
-            half4 Fragment(Varyings input) : SV_Target
-            {
-                return 0.0h;
-            }
-            ENDHLSL
-        }
-
-        Pass
-        {
             Name "SpotLight"
 
             // Rendering deferred lights using Stencil culling algorithm
@@ -269,8 +200,8 @@ Shader "Hidden/KageRP/DeferredLighting"
             Stencil
             {
                 Ref 0 // 0000_0000
-                ReadMask [_DeferredLight_StencilMask] // 0000_0001
-                WriteMask [_DeferredLight_StencilMask] // 0000_0001
+                ReadMask [_DeferredLight_StencilMask]
+                WriteMask [_DeferredLight_StencilMask]
                 Comp Equal
                 Pass Replace
                 Fail Replace
@@ -293,11 +224,6 @@ Shader "Hidden/KageRP/DeferredLighting"
             FRAMEBUFFER_INPUT_HALF(0);
             FRAMEBUFFER_INPUT_HALF(1);
 
-            float4 _LightColor;
-            float4 _SpotLightPositionWS;
-            float4 _SpotLightDirectionWS;
-            float4 _SpotLightAttenuation;
-
             struct Attributes
             {
                 half3 positionOS : POSITION;
@@ -316,7 +242,7 @@ Shader "Hidden/KageRP/DeferredLighting"
                 Varyings output;
                 float3 positionWS = TransformObjectToWorld(input.positionOS);
                 output.positionVS = TransformWorldToView(positionWS);
-                output.lightPositionVS = TransformWorldToView(_SpotLightPositionWS);
+                output.lightPositionVS = TransformWorldToView(_LightPositionWS);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
             }
@@ -341,13 +267,12 @@ Shader "Hidden/KageRP/DeferredLighting"
                     light.direction = lightDirectionWS;
                     light.shadowAttenuation = 1.0h;
                     light.distanceAttenuation =
-                        DistanceAttenuation(distanceSqr, _SpotLightAttenuation.xy) *
-                        AngleAttenuation(_SpotLightDirectionWS.xyz, lightDirectionWS, _SpotLightAttenuation.zw);
+                        DistanceAttenuation(distanceSqr, _LightAttenuation.xy) *
+                        AngleAttenuation(_LightDirectionWS.xyz, lightDirectionWS, _LightAttenuation.zw);
                 }
 
                 InputData inputData;
                 {
-                    // NOTE: All computation made in ViewSpace!
                     inputData.positionWS = scenePositionWS;
                     inputData.normalWS = TransformViewToWorldDir(gBuffer.normalVS);
                     inputData.viewDirectionWS = -SafeNormalize(scenePositionWS);
