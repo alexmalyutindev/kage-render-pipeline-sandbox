@@ -11,6 +11,11 @@
 #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/BRDFData.hlsl"
 #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Packing.hlsl"
 
+half3 GetWorldSpaceViewDirection(float3 positionWS)
+{
+    return SafeNormalize(positionWS - _WorldSpaceCameraPos.xyz);
+}
+
 struct MaterialData
 {
     half3 albedo;

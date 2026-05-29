@@ -9,16 +9,12 @@ namespace Rendering.KageRP
     public class DeferredLightingPass : AbstractRenderGraphPass
     {
         private KageRenderPipelineDefaultResources _defaultResources;
-        private readonly VisibleLight[] _pointLights = new VisibleLight[128];
-        private readonly VisibleLight[] _spotLights = new VisibleLight[128];
+        private readonly VisibleLight[] _additionalLights = new VisibleLight[256];
 
         private struct DeferredLightData
         {
-            public int PointLightsCount;
-            public VisibleLight[] PointLights;
-
-            public int SpotLightsCount;
-            public VisibleLight[] SpotLights;
+            public int LightsCount;
+            public VisibleLight[] Lights;
         }
 
         public override void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline)
@@ -50,7 +46,7 @@ namespace Rendering.KageRP
             public Mesh PointLightVolume;
             public Mesh SpotLightVolume;
 
-            public Material PointLightMaterial;
+            public Material DeferredLightMaterial;
 
             public TextureHandle Depth;
         }
@@ -70,13 +66,12 @@ namespace Rendering.KageRP
             passData.Proj = cameraData.Camera.projectionMatrix;
 
             passData.PointLightVolume = _defaultResources.PointLightVolume;
-            passData.PointLightMaterial = _defaultResources.PointLightMaterial;
-            passData.PointLightsCount = deferredLightData.PointLightsCount;
-            passData.PointLights = deferredLightData.PointLights;
-
             passData.SpotLightVolume = _defaultResources.SpotLightVolume;
-            passData.SpotLightsCount = deferredLightData.SpotLightsCount;
-            passData.SpotLights = deferredLightData.SpotLights;
+            passData.DeferredLightMaterial = _defaultResources.PointLightMaterial;
+
+            passData.PointLightsCount = deferredLightData.LightsCount;
+            passData.PointLights = deferredLightData.Lights;
+
 
             builder.SetInputAttachment(gBufferData.GBuffer1, 0, AccessFlags.Read);
             builder.SetInputAttachment(gBufferData.GBuffer2, 1, AccessFlags.Read);
@@ -109,6 +104,7 @@ namespace Rendering.KageRP
 
                     float rangeSq = Mathf.Max(range * range, 0.0001f);
                     var attenuation = new Vector4(1.0f / rangeSq, 0.25f, 0.0f, 1.0f);
+
                     if (visibleLight.lightType == LightType.Spot)
                     {
                         float outerAngle = visibleLight.light.spotAngle;
@@ -126,77 +122,33 @@ namespace Rendering.KageRP
                     cmd.SetGlobalVector("_LightDirectionWS", new Vector4(-direction.x, -direction.y, -direction.z, 0.0f));
                     cmd.SetGlobalVector("_LightAttenuation", attenuation);
 
-                    
                     // Stencil
-                    cmd.DrawMesh(data.PointLightVolume, matrix, data.PointLightMaterial, 0, 0);
+                    cmd.DrawMesh(data.PointLightVolume, matrix, data.DeferredLightMaterial, 0, 0);
                     // Lighting
-                    cmd.DrawMesh(data.PointLightVolume, matrix, data.PointLightMaterial, 0, 1);
-                }
-
-                for (int lightIndex = 0; lightIndex < data.SpotLightsCount; lightIndex++)
-                {
-                    ref var visibleLight = ref data.SpotLights[lightIndex];
-                    var localToWorld = visibleLight.localToWorldMatrix;
-                    var position = localToWorld.GetColumn(3);
-                    var direction = localToWorld.GetColumn(2);
-
-                    float range = visibleLight.range;
-                    float halfAngle = visibleLight.spotAngle * 0.5f * Mathf.Deg2Rad;
-                    float coneRadius = range * Mathf.Tan(halfAngle);
-                    var matrix = Matrix4x4.TRS(
-                        position,
-                        Quaternion.LookRotation(direction),
-                        new Vector3(coneRadius, coneRadius, range)
-                    );
-
-                    float rangeSq = Mathf.Max(range * range, 0.0001f);
-                    float outerAngle = visibleLight.light.spotAngle;
-                    float innerAngle = visibleLight.light.innerSpotAngle;
-                    float cosOuter = Mathf.Cos(outerAngle * 0.5f * Mathf.Deg2Rad);
-                    float cosInner = Mathf.Cos(innerAngle * 0.5f * Mathf.Deg2Rad);
-                    float cosRangeRcp = 1.0f / Mathf.Max(cosInner - cosOuter, 0.0001f);
-
-                    cmd.SetGlobalVector("_LightColor", visibleLight.finalColor);
-                    cmd.SetGlobalVector("_LightPositionWS", new Vector4(position.x, position.y, position.z, 1.0f));
-                    cmd.SetGlobalVector("_LightDirectionWS", new Vector4(-direction.x, -direction.y, -direction.z, 0.0f));
-                    cmd.SetGlobalVector("_LightAttenuation", new Vector4(1.0f / rangeSq, 0.25f, cosRangeRcp, -cosOuter * cosRangeRcp));
-
-                    // Stencil
-                    cmd.DrawMesh(data.SpotLightVolume, matrix, data.PointLightMaterial, 0, 0);
-                    // Lighting
-                    cmd.DrawMesh(data.SpotLightVolume, matrix, data.PointLightMaterial, 0, 2);
+                    cmd.DrawMesh(data.PointLightVolume, matrix, data.DeferredLightMaterial, 0, 1);
                 }
             });
         }
 
         private DeferredLightData PrepareDeferredLightData(CullingResultData cullingResultData)
         {
-            var pointLightsCount = 0;
-            var spotLightsCount = 0;
+            var lightsCount = 0;
 
             var visibleLights = cullingResultData.CullingResult.visibleLights;
-            for (var i = 0; i < visibleLights.Length && i < _pointLights.Length; i++)
+            for (var i = 0; i < visibleLights.Length && i < _additionalLights.Length; i++)
             {
                 var visibleLight = visibleLights[i];
-                if (visibleLight.lightType == LightType.Point)
+                if (visibleLight.lightType == LightType.Point || visibleLight.lightType == LightType.Spot)
                 {
-                    _pointLights[pointLightsCount] = visibleLight;
-                    pointLightsCount++;
-                }
-                else if (visibleLight.lightType == LightType.Spot)
-                {
-                    _spotLights[spotLightsCount] = visibleLight;
-                    spotLightsCount++;
+                    _additionalLights[lightsCount] = visibleLight;
+                    lightsCount++;
                 }
             }
 
             var deferredLightData = new DeferredLightData()
             {
-                PointLightsCount = pointLightsCount,
-                PointLights = _pointLights,
-
-                SpotLightsCount = spotLightsCount,
-                SpotLights = _spotLights,
+                LightsCount = lightsCount,
+                Lights = _additionalLights,
             };
             return deferredLightData;
         }
@@ -219,21 +171,6 @@ namespace Rendering.KageRP
             // On all devices: Use the smoothing factor that matches the GI.
             lightAttenuation.x = oneOverLightRangeSqr;
             lightAttenuation.y = lightRangeSqrOverFadeRangeSqr;
-        }
-
-        private static Matrix4x4 CreatePointLightData(ref VisibleLight pointLight)
-        {
-            var position = pointLight.light.transform.position;
-            // position = viewMatrix.MultiplyPoint(position);
-            var matrix = new Matrix4x4();
-            matrix.SetRow(0, position);
-            matrix.SetRow(1, pointLight.finalColor);
-            matrix.SetRow(2, new Vector4(pointLight.range, 0.0f));
-
-            var lightAttenuation = Vector4.one;
-            GetPunctualLightDistanceAttenuation(pointLight.range, ref lightAttenuation);
-            matrix.SetRow(3, lightAttenuation);
-            return matrix;
         }
     }
 }

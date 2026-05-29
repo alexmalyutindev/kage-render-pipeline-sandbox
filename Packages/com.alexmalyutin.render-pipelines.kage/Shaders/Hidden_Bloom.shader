@@ -51,19 +51,19 @@ Shader "Hidden/KageRP/Bloom"
             return output;
         }
 
-        half Luminance(half3 c) { return dot(c, half3(0.2126h, 0.7152h, 0.0722h)); }
+        half Luminance(half3 c) { return dot(c, half3(0.2126729h, 0.7151522h, 0.0721750h)); }
         half3 Sample(float2 uv) { return _MainTex.Sample(sampler_LinearClamp, uv, 0); }
         half3 Sample(float2 uv, float2 offset) { return Sample(uv + offset); }
 
         half3 SampleDualDown(float2 uv, float2 halfPixel)
         {
             float4 offset = float4(halfPixel.xy, -halfPixel.xy);
-            half3 color = Sample(uv) * 4.0h;
-            color += Sample(uv, offset.xy);
-            color += Sample(uv, offset.zy);
-            color += Sample(uv, offset.xw);
-            color += Sample(uv, offset.zw);
-            return color * 0.125h;
+            float3 color = Sample(uv) * 0.5h;
+            color += Sample(uv, offset.xy) * 0.125h;
+            color += Sample(uv, offset.zy) * 0.125h;
+            color += Sample(uv, offset.xw) * 0.125h;
+            color += Sample(uv, offset.zw) * 0.125h;
+            return color;
         }
 
         half3 SampleDualUp(float2 uv, float2 halfPixel)
@@ -82,13 +82,11 @@ Shader "Hidden/KageRP/Bloom"
 
         Pass
         {
-            Name "DualFilteringBlur Prefiltering"
+            Name "DualFilteringBlur Pre-filtering"
 
             HLSLPROGRAM
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
-
-            #pragma shader_feature_fragment _ _THRESHOLD_AFTER
 
             half3 Fragment(Varyings input) : SV_Target
             {
@@ -96,7 +94,7 @@ Shader "Hidden/KageRP/Bloom"
 
                 // Compress instead of clamp — remaps high values to a finite range
                 // preserving hue and relative brightness
-                half brightness = Luminance(color);
+                half brightness = Max3(color.r, color.g, color.b); // Luminance(color);
                 half compressed = brightness / (1.0h + brightness / ClampMax);
                 color *= compressed / max(brightness, 1e-4h);
 
@@ -152,8 +150,6 @@ Shader "Hidden/KageRP/Bloom"
             HLSLPROGRAM
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
-
-            #pragma shader_feature_fragment _ _THRESHOLD_AFTER
 
             half3 Fragment(Varyings input) : SV_Target
             {

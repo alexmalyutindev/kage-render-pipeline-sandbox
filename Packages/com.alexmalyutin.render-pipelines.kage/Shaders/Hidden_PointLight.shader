@@ -21,10 +21,10 @@ Shader "Hidden/KageRP/DeferredLighting"
         {
             Tags
             {
-                "LightMode" = "DeferredLighting Stencil"
+                "LightMode" = "DeferredStencil"
             }
 
-            Name "PointLight Stencil"
+            Name "Deferred Stencil"
 
             // Rendering deferred lights using Stencil culling algorithm
             // ref. https://kayru.org/articles/deferred-stencil/
@@ -86,7 +86,7 @@ Shader "Hidden/KageRP/DeferredLighting"
                 "LightMode" = "DeferredLighting"
             }
 
-            Name "PointLight"
+            Name "Deferred Lighting"
 
             // Rendering deferred lights using Stencil culling algorithm
             // ref. https://kayru.org/articles/deferred-stencil/
@@ -125,7 +125,7 @@ Shader "Hidden/KageRP/DeferredLighting"
             struct Varyings
             {
                 float3 positionVS : TEXCOORD0;
-                float3 lightPositionVS : TEXCOORD1;
+                float3 lightPositionWS : TEXCOORD1;
                 float4 positionCS : SV_POSITION;
             };
 
@@ -133,116 +133,8 @@ Shader "Hidden/KageRP/DeferredLighting"
             {
                 Varyings output;
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
-                output.lightPositionVS = TransformWorldToView(_LightPositionWS);
+                output.lightPositionWS = _LightPositionWS.xyz;
                 output.positionVS = TransformWorldToView(positionWS);
-                output.positionCS = TransformWorldToHClip(positionWS);
-                return output;
-            }
-
-            half4 Fragment(Varyings input) : SV_Target
-            {
-                half4 gBuffer1 = LOAD_FRAMEBUFFER_INPUT(0, input.positionCS);
-                half4 gBuffer2 = LOAD_FRAMEBUFFER_INPUT(1, input.positionCS);
-
-                GBufferData gBuffer = ReadGBuffer(gBuffer1, gBuffer2);
-                float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z);
-                scenePositionVS *= gBuffer.depth;
-
-                Light light;
-                {
-                    float3 lightPositionVS = input.lightPositionVS;
-                    float3 lightDirectionVS = lightPositionVS - scenePositionVS;
-
-                    float distanceSqr = dot(lightDirectionVS, lightDirectionVS);
-
-                    light.color = _LightColor;
-                    light.direction = lightDirectionVS * rsqrt(distanceSqr);
-                    light.shadowAttenuation = 1.0h;
-                    // TODO: Add Spot angle atten to completely unify shader!
-                    light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation.xy);
-                }
-
-                InputData inputData;
-                {
-                    // NOTE: All computation made in ViewSpace!
-                    inputData.positionWS = scenePositionVS;
-                    inputData.normalWS = gBuffer.normalVS;
-                    inputData.viewDirectionWS = -SafeNormalize(scenePositionVS);
-                    inputData.shadowCoord = 0.0f;
-                    inputData.bakedGI = 0.0h;
-                    inputData.normalizedScreenUV = 0.0h;
-                }
-
-                MaterialData data;
-                {
-                    data.albedo = gBuffer.albedo;
-                    data.occlusion = gBuffer.occlusion;
-                    data.metallic = gBuffer.metallic;
-                    data.roughness = gBuffer.roughness;
-                    data.emission = 0.0h;
-                    data.normalTS = half3(0.0h, 0.0h, 1.0h);
-                    data.alpha = 0.0h;
-                }
-
-                BRDFData brdf = InitBRDFData(data);
-                half3 color = SingleLightPBR(brdf, inputData, light);
-                return half4(color, 0.0h);
-            }
-            ENDHLSL
-        }
-
-        Pass
-        {
-            Name "SpotLight"
-
-            // Rendering deferred lights using Stencil culling algorithm
-            // ref. https://kayru.org/articles/deferred-stencil/
-            Stencil
-            {
-                Ref 0 // 0000_0000
-                ReadMask [_DeferredLight_StencilMask]
-                WriteMask [_DeferredLight_StencilMask]
-                Comp Equal
-                Pass Replace
-                Fail Replace
-            }
-
-            Blend One One
-            ColorMask RGB
-
-            Cull Front
-            ZWrite Off
-            ZTest GEqual
-
-            HLSLPROGRAM
-            #pragma vertex Vertex
-            #pragma fragment Fragment
-
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
-
-            FRAMEBUFFER_INPUT_HALF(0);
-            FRAMEBUFFER_INPUT_HALF(1);
-
-            struct Attributes
-            {
-                half3 positionOS : POSITION;
-            };
-
-            struct Varyings
-            {
-                float3 positionVS : TEXCOORD0;
-                float3 lightPositionVS : TEXCOORD1;
-                float4 positionCS : SV_POSITION;
-            };
-
-
-            Varyings Vertex(Attributes input)
-            {
-                Varyings output;
-                float3 positionWS = TransformObjectToWorld(input.positionOS);
-                output.positionVS = TransformWorldToView(positionWS);
-                output.lightPositionVS = TransformWorldToView(_LightPositionWS);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
             }
@@ -259,23 +151,23 @@ Shader "Hidden/KageRP/DeferredLighting"
 
                 Light light;
                 {
-                    float3 lightVector = input.lightPositionVS - scenePositionVS;
-                    float distanceSqr = max(dot(lightVector, lightVector), HALF_MIN);
-                    half3 lightDirectionWS = TransformViewToWorldDir(half3(lightVector * rsqrt(distanceSqr)));
+                    float3 lightVector = input.lightPositionWS - scenePositionWS;
+                    float distanceSqr = dot(lightVector, lightVector);
+                    half3 lightDirectionWS = half3(lightVector * rsqrt(distanceSqr));
+                    half3 spotDirection = normalize(_LightDirectionWS.xyz);
 
-                    light.color = _LightColor;
+                    light.color = _LightColor.rgb;
                     light.direction = lightDirectionWS;
                     light.shadowAttenuation = 1.0h;
-                    light.distanceAttenuation =
-                        DistanceAttenuation(distanceSqr, _LightAttenuation.xy) *
-                        AngleAttenuation(_LightDirectionWS.xyz, lightDirectionWS, _LightAttenuation.zw);
+                    light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation.xy);
+                    light.distanceAttenuation *= AngleAttenuation(spotDirection, lightDirectionWS, _LightAttenuation.zw);
                 }
 
                 InputData inputData;
                 {
                     inputData.positionWS = scenePositionWS;
-                    inputData.normalWS = TransformViewToWorldDir(gBuffer.normalVS);
-                    inputData.viewDirectionWS = -SafeNormalize(scenePositionWS);
+                    inputData.normalWS = TransformViewToWorldNormal(gBuffer.normalVS);
+                    inputData.viewDirectionWS = GetWorldSpaceViewDirection(scenePositionWS);
                     inputData.shadowCoord = 0.0f;
                     inputData.bakedGI = 0.0h;
                     inputData.normalizedScreenUV = 0.0h;

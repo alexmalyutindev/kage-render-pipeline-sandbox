@@ -21,7 +21,7 @@ half DistanceAttenuation(float distanceSqr, half2 distanceAttenuation)
     return lightAttenuation * smoothFactor;
 }
 
-half AngleAttenuation(half3 spotDirection, half3 lightDirection, half2 spotAttenuation)
+float AngleAttenuation(half3 spotDirection, half3 lightDirection, half2 spotAttenuation)
 {
     // Spot Attenuation with a linear falloff can be defined as
     // (SdotL - cosOuterAngle) / (cosInnerAngle - cosOuterAngle)
