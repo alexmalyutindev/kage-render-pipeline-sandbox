@@ -11,15 +11,13 @@ namespace Rendering.KageRP
     [Serializable]
     public class BloomPass : AbstractRenderGraphPass
     {
-        public Material Material;
-
-        [Space]
         [Range(1, 5)] public int BlurTaps = 3;
         [Range(0.0f, 2.0f)] public float Threshold = 1.0f;
         [Range(0.0f, 1.0f)] public float Scatter = 1.0f;
         [Min(0.0f)] public float ClampMax = 100.0f;
         [Range(0.5f, 2.0f)] public float Spread = 1.0f;
 
+        private KageRenderPipelineDefaultResources _defaultResources;
         private readonly List<TextureHandle> _mips;
 
         public BloomPass()
@@ -36,17 +34,22 @@ namespace Rendering.KageRP
             public Vector4 Params;
             public Vector4 Params2;
         }
+        
+        public override void Setup(in KageRenderPipelineAsset asset, in KageRenderPipeline pipeline)
+        {
+            _defaultResources = asset.DefaultResources;
+        }
 
         public override void Record(RenderGraph renderGraph, ContextContainer frameData)
         {
-            if (Material == null) return;
+            if (_defaultResources.BloomMaterial == null) return;
 
             var cameraData = frameData.Get<CameraData>();
 
             using var builder = renderGraph.AddUnsafePass<PassData>("Bloom", out var passData);
             builder.AllowPassCulling(false);
 
-            passData.Material = Material;
+            passData.Material = _defaultResources.BloomMaterial;
             var thresholdKnee = Threshold * 0.5f; // Hardcoded soft knee
             passData.Params = new Vector4(Scatter, ClampMax, Threshold, thresholdKnee);
             passData.Params2 = new Vector4(Spread, 0.0f);

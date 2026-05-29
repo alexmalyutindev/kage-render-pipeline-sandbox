@@ -16,9 +16,10 @@ namespace Rendering.KageRP
         [FormerlySerializedAs("PointLightMesh")] [Header("Deferred Lighting")]
         public Mesh PointLightVolume;
         public Mesh SpotLightVolume;
-        public Material PointLightMaterial;
+        public Material DeferredLightMaterial;
 
         [Space]
         public Material SSAOMaterial;
+        public Material BloomMaterial;
     }
 }

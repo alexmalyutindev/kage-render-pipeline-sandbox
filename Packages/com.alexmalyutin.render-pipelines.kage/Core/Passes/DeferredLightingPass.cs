@@ -67,7 +67,7 @@ namespace Rendering.KageRP
 
             passData.PointLightVolume = _defaultResources.PointLightVolume;
             passData.SpotLightVolume = _defaultResources.SpotLightVolume;
-            passData.DeferredLightMaterial = _defaultResources.PointLightMaterial;
+            passData.DeferredLightMaterial = _defaultResources.DeferredLightMaterial;
 
             passData.PointLightsCount = deferredLightData.LightsCount;
             passData.PointLights = deferredLightData.Lights;
