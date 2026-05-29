@@ -10,11 +10,31 @@ Shader "Hidden/KageRP/DeferredLighting"
         LOD 100
 
         HLSLINCLUDE
+        #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
+
         float4 _LightColor;
         float4 _LightPositionWS;
         float4 _LightDirectionWS;
         // Precomputed data: (1.0f / rangeSq, 0.25f, cosRangeRcp, -cosOuter * cosRangeRcp)
         float4 _LightAttenuation;
+
+        Light GetLight(float3 positionWS)
+        {
+            Light light;
+            float3 lightVector = _LightPositionWS.xyz - positionWS;
+            float distanceSqr = dot(lightVector, lightVector);
+            half3 lightDirectionWS = half3(lightVector * rsqrt(distanceSqr));
+            half3 spotDirection = normalize(_LightDirectionWS.xyz);
+
+            light.color = _LightColor.rgb;
+            light.direction = lightDirectionWS;
+            light.shadowAttenuation = 1.0h;
+            light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation.xy);
+            light.distanceAttenuation *= AngleAttenuation(spotDirection, lightDirectionWS, _LightAttenuation.zw);
+
+            return light;
+        }
         ENDHLSL
 
         Pass
@@ -52,8 +72,6 @@ Shader "Hidden/KageRP/DeferredLighting"
             HLSLPROGRAM
             #pragma vertex Vertex
             #pragma fragment Fragment
-
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
 
             struct Attributes
             {
@@ -111,9 +129,6 @@ Shader "Hidden/KageRP/DeferredLighting"
             #pragma vertex Vertex
             #pragma fragment Fragment
 
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Lighting.hlsl"
-
             FRAMEBUFFER_INPUT_HALF(0);
             FRAMEBUFFER_INPUT_HALF(1);
 
@@ -125,15 +140,14 @@ Shader "Hidden/KageRP/DeferredLighting"
             struct Varyings
             {
                 float3 positionVS : TEXCOORD0;
-                float3 lightPositionWS : TEXCOORD1;
                 float4 positionCS : SV_POSITION;
             };
 
             Varyings Vertex(Attributes input)
             {
                 Varyings output;
+                // TODO: Make use view-space rendering!
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
-                output.lightPositionWS = _LightPositionWS.xyz;
                 output.positionVS = TransformWorldToView(positionWS);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 return output;
@@ -145,29 +159,18 @@ Shader "Hidden/KageRP/DeferredLighting"
                 half4 gBuffer2 = LOAD_FRAMEBUFFER_INPUT(1, input.positionCS);
 
                 GBufferData gBuffer = ReadGBuffer(gBuffer1, gBuffer2);
-                float3 scenePositionVS = input.positionVS.xyz / abs(input.positionVS.z);
-                scenePositionVS *= gBuffer.depth;
-                float3 scenePositionWS = TransformViewToWorld(scenePositionVS);
+                float3 positionVS = input.positionVS.xyz / abs(input.positionVS.z);
+                positionVS *= gBuffer.depth;
+                float3 positionWS = TransformViewToWorld(positionVS);
 
-                Light light;
-                {
-                    float3 lightVector = input.lightPositionWS - scenePositionWS;
-                    float distanceSqr = dot(lightVector, lightVector);
-                    half3 lightDirectionWS = half3(lightVector * rsqrt(distanceSqr));
-                    half3 spotDirection = normalize(_LightDirectionWS.xyz);
-
-                    light.color = _LightColor.rgb;
-                    light.direction = lightDirectionWS;
-                    light.shadowAttenuation = 1.0h;
-                    light.distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation.xy);
-                    light.distanceAttenuation *= AngleAttenuation(spotDirection, lightDirectionWS, _LightAttenuation.zw);
-                }
+                Light light = GetLight(positionWS);
 
                 InputData inputData;
                 {
-                    inputData.positionWS = scenePositionWS;
+                    inputData.positionWS = positionWS;
+                    // TODO: Make use view-space rendering!
                     inputData.normalWS = TransformViewToWorldNormal(gBuffer.normalVS);
-                    inputData.viewDirectionWS = GetWorldSpaceViewDirection(scenePositionWS);
+                    inputData.viewDirectionWS = GetWorldSpaceViewDirection(positionWS);
                     inputData.shadowCoord = 0.0f;
                     inputData.bakedGI = 0.0h;
                     inputData.normalizedScreenUV = 0.0h;
