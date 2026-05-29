@@ -82,4 +82,4 @@ MonoBehaviour:
         Threshold: 1
         Scatter: 0.7
         ClampMax: 5
-        Spread: 2
+        Spread: 1.5
