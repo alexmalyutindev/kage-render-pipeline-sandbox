@@ -1,8 +1,10 @@
 #ifndef KAGERP_REALTIMELIGHTS
 #define KAGERP_REALTIMELIGHTS
 
-#include "Input.hlsl"
-#include "Shadows.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/GlobalIlummination.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Input.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Shadows.hlsl"
 
 struct Light
 {

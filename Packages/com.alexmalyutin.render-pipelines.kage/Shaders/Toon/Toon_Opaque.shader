@@ -54,33 +54,19 @@ Shader "KageRP/Toon/Opaque"
         TEXTURE2D(_SpecularReflectionSampler);
         SAMPLER(sampler_SpecularReflectionSampler);
 
+        #define SampleFalloff(t) (_FalloffSampler.Sample(sampler_LinearClamp, float2(t, 0.25f)))
+        #define SampleRimFalloff(t) (_RimLightSampler.Sample(sampler_LinearClamp, float2(t, 0.25f)).x)
+        #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/ToonLighting.hlsl"
+
         // Feathered cel step — the spine of every hard-edge effect
         half CelStep(half v, half threshold, half feather)
         {
             return smoothstep(threshold - feather, threshold + feather, v);
         }
 
-        half3 SampleNormals(TEXTURE2D_PARAM(tex, samp), float2 uv, float scale)
+        half3 SampleNormal(TEXTURE2D_PARAM(tex, samp), float2 uv, float scale)
         {
             return UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, uv), scale);
-        }
-
-        half3 ResolveNormal(half3 normalWS, half4 tangentWS, float2 uv, bool useNormalMap)
-        {
-            if (useNormalMap)
-            {
-                half3 normalTS = SampleNormals(_NormalMap, sampler_NormalMap, uv, _NormalScale);
-                half3x3 tbn = CreateTangentToWorld(normalWS, tangentWS.xyz, tangentWS.w);
-                return TransformTangentToWorld(normalTS, tbn, true);
-            }
-            return SafeNormalize(normalWS);
-        }
-
-        half3 OverlayBlend(half3 upper, half3 lower)
-        {
-            half3 lowerResult = 2.0h * lower * upper;
-            half3 greaterResult = 2.0h * upper * (1.0h - lower) + (2.0h * lower - 1.0h);
-            return lerp(lowerResult, greaterResult, round(lower));
         }
         ENDHLSL
 
@@ -99,7 +85,7 @@ Shader "KageRP/Toon/Opaque"
             #pragma vertex Vertex
             #pragma fragment Fragment
 
-            #pragma multi_compile_fragment _ MAIN_LIGHT_SHADOW_ON
+            #pragma multi_compile _ MAIN_LIGHT_SHADOW_ON
             #pragma shader_feature_fragment _NORMAL_MAP
             #pragma shader_feature_fragment _SPECULAR_MAP
 
@@ -119,6 +105,7 @@ Shader "KageRP/Toon/Opaque"
                 half3 normalWS : TEXCOORD2;
                 half4 tangentWS : TEXCOORD3;
                 half3 viewDirectionWS : TEXCOORD4;
+                half shadowAttenuation : TEXCOORD5;
             };
 
             Varyings Vertex(Attributes input)
@@ -132,70 +119,43 @@ Shader "KageRP/Toon/Opaque"
                 output.tangentWS.xyz = TransformObjectToWorldNormal(input.tangentOS.xyz);
                 output.tangentWS.w = input.tangentOS.w * GetOddNegativeScale();
                 output.viewDirectionWS = GetWorldSpaceViewDirection(positionWS);
+
+                output.shadowAttenuation = GetMainLightShadow(positionWS, TransformWorldToShadowMap(positionWS));
                 return output;
             }
 
             half4 Fragment(Varyings input) : SV_Target
             {
                 half4 diffSamplerColor = _BaseMap.Sample(sampler_BaseMap, input.uv) * _BaseColor;
-                // TODO: keyword
-                clip(diffSamplerColor.a - 0.5h);
+                clip(diffSamplerColor.a - 0.5h); // TODO: keyword
 
-                Light mainLight = GetMainLight(input.positionWS, TransformWorldToShadowMap(input.positionWS));
-
-                half3 normalTS = SampleNormals(_NormalMap, sampler_NormalMap, input.uv, _NormalScale);
+                half3 normalTS = SampleNormal(_NormalMap, sampler_NormalMap, input.uv, _NormalScale);
                 half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
                 half3 normalWS = TransformTangentToWorld(normalTS, tbn, false);
 
-                half NdotL = dot(normalWS, mainLight.direction);
-                half NdotV = dot(normalWS, input.viewDirectionWS);
-
-                // Falloff. Convert the angle between the normal and the camera direction into a lookup for the gradient
-                half falloffU = clamp(1.0h - abs(NdotV), 0.02h, 0.98h);
-                half4 falloffSamplerColor = FALLOFF_POWER * _FalloffSampler.Sample(sampler_LinearClamp, float2(falloffU, 0.25f));
-
-                half3 shadowColor = diffSamplerColor.rgb * diffSamplerColor.rgb;
-
-                half3 combinedColor = lerp(diffSamplerColor.rgb, shadowColor, falloffSamplerColor.r);
-                combinedColor *= (1.0 + falloffSamplerColor.rgb * falloffSamplerColor.a);
-
-                // Specular
-                // Use the eye vector as the light vector
                 #if defined(_SPECULAR_MAP)
-                half4 reflectionMaskColor = _SpecularReflectionSampler.Sample(sampler_SpecularReflectionSampler, input.uv.xy);
+                half4 specularMask = _SpecularReflectionSampler.Sample(sampler_SpecularReflectionSampler, input.uv.xy);
                 #else
-                half4 reflectionMaskColor = half4(1.0h, 1.0h, 1.0h, 0.0h);
+                half4 specularMask = half4(1.0h, 1.0h, 1.0h, 0.0h);
                 #endif
 
-                half specularDot = dot(normalWS, input.viewDirectionWS.xyz); // NOTE: Should be NdotH?
-                half4 lighting = lit(NdotV, specularDot, _SpecularPower);
-                half3 specularColor = saturate(lighting.z) * reflectionMaskColor.rgb * diffSamplerColor.rgb;
-                combinedColor += specularColor;
+                ToonData toonData;
+                toonData.albedo = diffSamplerColor.rgb;
+                toonData.alpha = 1.0h;
+                toonData.shadowColor = _ShadowColor.rgb;
+                toonData.specularMask = specularMask;
+                toonData.specularPower = _SpecularPower;
 
-                // Reflection
-                half3 reflectVector = reflect(-input.viewDirectionWS.xyz, normalWS).xzy;
-                half2 sphereMapCoords = 0.5 * (half2(1.0, 1.0) + reflectVector.xy);
-                half4 encodedReflection = unity_SpecCube0.SampleLevel(samplerunity_SpecCube0, reflectVector, 0);
-                half3 reflectColor = DecodeHDREnvironment(encodedReflection, unity_SpecCube0_HDR);
-                reflectColor = OverlayBlend(reflectColor, combinedColor);
+                InputData inputData;
+                inputData.positionWS = input.positionWS;
+                inputData.normalWS = normalWS;
+                inputData.viewDirectionWS = input.viewDirectionWS;
+                inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
+                inputData.normalizedScreenUV = 0.0h; // TODO
+                inputData.bakedGI = 0.0h; // TODO
+                half3 toonLighting = ToonLighting(toonData, inputData);
 
-                combinedColor = lerp(combinedColor, reflectColor, reflectionMaskColor.a);
-                combinedColor *= _BaseColor.rgb * mainLight.color;
-                float opacity = diffSamplerColor.a * _BaseColor.a;
-
-                // Cast shadows
-                shadowColor = _ShadowColor.rgb * combinedColor;
-                half attenuation = saturate(2.0 * mainLight.shadowAttenuation * smoothstep(-0.2, 0.2, NdotL) - 1.0);
-                combinedColor = lerp(shadowColor, combinedColor, attenuation);
-
-                // Rimlight
-                half rimlightDot = saturate(0.5 * (NdotL + 1.0));
-                falloffU = saturate(rimlightDot * falloffU);
-                falloffU = _RimLightSampler.Sample(sampler_LinearClamp, float2(falloffU, 0.25f)).r;
-                half3 lightColor = diffSamplerColor.rgb; // * 2.0;
-                combinedColor += falloffU * lightColor;
-
-                return half4(combinedColor, 1.0h);
+                return half4(toonLighting, 1.0h);
             }
             ENDHLSL
         }

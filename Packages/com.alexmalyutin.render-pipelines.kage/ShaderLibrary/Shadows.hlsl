@@ -80,25 +80,49 @@ half SampleMainLightShadowMapPCF(float3 shadowCoords, float2 offset)
     return SampleMainLightShadowMapPCF(float3(shadowCoords.xy + offset, shadowCoords.z));
 }
 
+// 9-Tap Poisson Disk samples
+static const float2 PoissonDisk9[9] = 
+{
+    float2(-0.881090, -0.151152),
+    float2(-0.298967, -0.794178),
+    float2(-0.237407,  0.930438),
+    float2(-0.841575,  0.484197),
+    float2( 0.699039,  0.642921),
+    float2( 0.280424, -0.916327),
+    float2( 0.491297,  0.774439),
+    float2( 0.537909, -0.498442),
+    float2(-0.057790,  0.026871)
+};
+
+half SampleMainLightShadowMap3x3(float4 shadowCoords)
+{
+    half attenuation = 0.0h;
+    UNITY_UNROLL for (uint i = 0; i < 9; i++)
+    {
+        float2 offset = PoissonDisk9[i] * _MainLightShadowMap_TexelSize.yx * 1.33f;
+        attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offset);
+    }
+    return attenuation * (1.0h / 9.0h);
+}
+
 half SampleMainLightShadowMap2x2(float4 shadowCoords)
 {
-    float4 offsets = float4(_MainLightShadowMap_TexelSize.xy, -_MainLightShadowMap_TexelSize.xy) * 0.5f;
+    float4 offsets = float4(_MainLightShadowMap_TexelSize.xy, -_MainLightShadowMap_TexelSize.xy);
     half attenuation = 0.0h;
 
-    attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz);
     attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.xy);
     attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.xw);
     attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.zy);
     attenuation += SampleMainLightShadowMapPCF(shadowCoords.xyz, offsets.zw);
 
-    return attenuation * 0.2h;
+    return attenuation * 0.25h;
 }
 
 half GetMainLightShadow(float3 positionWS, float4 shadowCoords)
 {
     #if defined(MAIN_LIGHT_SHADOW_ON)
     shadowCoords.z = saturate(shadowCoords.z);
-    half shadow = SampleMainLightShadowMap2x2(shadowCoords);
+    half shadow = SampleMainLightShadowMap3x3(shadowCoords);
     half fade = GetMainLightShadowFade(positionWS);
     return lerp(shadow, 1.0h, fade);
     #else
