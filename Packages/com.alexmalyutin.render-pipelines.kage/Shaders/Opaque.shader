@@ -187,7 +187,7 @@ Shader "KageRP/Opaque"
 
             Name "ShadowCaster"
 
-            Cull Front
+            Cull [_CullMode]
             ZWrite On
             ZTest LEqual
             ColorMask 0

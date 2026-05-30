@@ -16,6 +16,8 @@ half3 GetWorldSpaceViewDirection(float3 positionWS)
     return SafeNormalize(positionWS - _WorldSpaceCameraPos.xyz);
 }
 
+float3 GetCameraPositionWS() { return _WorldSpaceCameraPos.xyz; }
+
 struct MaterialData
 {
     half3 albedo;
