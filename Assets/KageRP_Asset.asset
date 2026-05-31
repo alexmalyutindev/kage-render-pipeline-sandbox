@@ -77,7 +77,6 @@ MonoBehaviour:
       type: {class: BloomPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        Material: {fileID: 2100000, guid: 2e8aa6483e01942cfa22eb81026ff7fc, type: 2}
         BlurTaps: 2
         Threshold: 1
         Scatter: 0.7

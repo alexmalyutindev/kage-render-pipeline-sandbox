@@ -149,6 +149,7 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _EdgeThickness: 1
     - _EmissionToggle: 0
     - _EnvMapIntensity: 1
     - _EnvironmentReflections: 1

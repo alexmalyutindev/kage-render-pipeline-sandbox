@@ -16,6 +16,34 @@
 #define SampleRimFalloff(t) (t)
 #endif
 
+// Local shadows
+float _EnableLocalShadow;
+float4 _LocalShadow_TexelSize;
+TEXTURE2D_SHADOW(_LocalShadow);
+SAMPLER_CMP(sampler_LocalShadow);
+float4x4 _WorldToLocalShadow;
+
+half SampleLocalShadow(float3 positionWS)
+{
+    if (_EnableLocalShadow > 0.5)
+    {
+        float4 localShadowCoord = mul(_WorldToLocalShadow, float4(positionWS, 1.0f));
+        localShadowCoord.z += 1.0f / 512.0f;
+
+        float4 offsets = float4(_LocalShadow_TexelSize.xy, -_LocalShadow_TexelSize.xy) * 0.5f;
+
+        half shadow = 0.0h;
+        shadow += SAMPLE_TEXTURE2D_SHADOW(_LocalShadow, sampler_LocalShadow, localShadowCoord + float3(offsets.xy, 0));
+        shadow += SAMPLE_TEXTURE2D_SHADOW(_LocalShadow, sampler_LocalShadow, localShadowCoord + float3(offsets.xw, 0));
+        shadow += SAMPLE_TEXTURE2D_SHADOW(_LocalShadow, sampler_LocalShadow, localShadowCoord + float3(offsets.zy, 0));
+        shadow += SAMPLE_TEXTURE2D_SHADOW(_LocalShadow, sampler_LocalShadow, localShadowCoord + float3(offsets.zw, 0));
+
+        return shadow * 0.25h;
+    }
+
+    return 1.0h;
+}
+
 struct ToonData
 {
     half3 albedo;
@@ -69,6 +97,7 @@ half3 ToonLighting(ToonData toonData, InputData inputData)
     combinedColor *= mainLight.color; // NOTE: Here was a tint color!
 
     // Shadow
+    mainLight.shadowAttenuation = SampleLocalShadow(inputData.positionWS);
     half3 shadowedColor = toonData.shadowColor * combinedColor;
     half attenuation = saturate(2.0h * mainLight.shadowAttenuation - 1.0h);
     combinedColor = lerp(shadowedColor, combinedColor, attenuation);

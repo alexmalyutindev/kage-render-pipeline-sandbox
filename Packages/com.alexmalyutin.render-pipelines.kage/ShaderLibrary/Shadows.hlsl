@@ -71,7 +71,7 @@ half SampleMainLightShadowMapPCF(float3 shadowCoords)
 
 half SampleMainLightShadowMapLinear(float3 shadowCoords)
 {
-    half shadowZ = SAMPLE_TEXTURE2D(_MainLightShadowMap, sampler_LinearClamp, shadowCoords.xy);
+    half shadowZ = SAMPLE_TEXTURE2D(_MainLightShadowMap, sampler_LinearClamp, shadowCoords.xy).x;
     return step(shadowZ, shadowCoords.z);
 }
 

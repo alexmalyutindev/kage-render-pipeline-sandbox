@@ -13,6 +13,7 @@ Shader "KageRP/Toon/Opaque"
         [SingleLineTex] _FalloffSampler ("Falloff Control", 2D) = "white" {}
         [SingleLineTex] _RimLightSampler ("RimLight Control", 2D) = "white" {}
         [SingleLineTex(_SPECULAR_MAP)] _SpecularReflectionSampler ("Specular (RGB) ReflectionMask (A)", 2D) = "white" {}
+        _NormalScale("_NormalScale", Float) = 1.0
         [SingleLineTex(_NORMAL_MAP)][Normal] _NormalMap ("Normal Map", 2D) = "bump" {}
     }
 
@@ -21,7 +22,7 @@ Shader "KageRP/Toon/Opaque"
         Tags
         {
             "RenderType" = "Opaque"
-            "Queue" = "Geometry"
+            "Queue" = "Geometry+10"
         }
         LOD 100
 
@@ -160,7 +161,60 @@ Shader "KageRP/Toon/Opaque"
             ENDHLSL
         }
 
-        UsePass "KageRP/Opaque/SHADOWCASTER"
+        Pass
+        {
+            Tags
+            {
+                "LightMode" = "ShadowCaster"
+            }
+
+            Name "ShadowCaster"
+
+            Cull Off
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma vertex Vertex
+            #pragma fragment Fragment
+
+            #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Shadows.hlsl"
+
+            struct Attributes
+            {
+                half3 positionOS : POSITION;
+                half3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float2 uv : TEXCOORD0;
+                float4 postionCS : SV_POSITION;
+            };
+
+            Varyings Vertex(Attributes input)
+            {
+                Varyings output;
+
+                output.uv = mad(input.uv, _BaseMap_ST.xy, _BaseMap_ST.zw);
+
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 positionWS = TransformObjectToWorld(input.positionOS);
+                output.postionCS = TransformWorldToHClip(
+                    ApplyShadowBias(positionWS, normalWS, -_MainLightPosition.xyz)
+                );
+                output.postionCS = ApplyShadowClamping(output.postionCS);
+                return output;
+            }
+
+            half4 Fragment(Varyings input) : SV_Target
+            {
+                return 0.0h;
+            }
+            ENDHLSL
+        }
     }
 
     FallBack "Hidden/InternalErrorShader"
