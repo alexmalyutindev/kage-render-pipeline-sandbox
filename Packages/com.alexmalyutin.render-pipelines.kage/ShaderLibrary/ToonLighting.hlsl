@@ -68,6 +68,7 @@ half3 ToonLighting(ToonData toonData, InputData inputData)
     half3 N = inputData.normalWS;
     half3 V = inputData.viewDirectionWS;
     half3 L = mainLight.direction;
+    half3 H = normalize(V + L);
 
     half NdotL = dot(N, L);
     half NdotV = dot(N, V);
@@ -82,14 +83,14 @@ half3 ToonLighting(ToonData toonData, InputData inputData)
     combinedColor *= (1.0h + falloffColor.rgb * falloffColor.a);
 
     // Specular
-    half specularDot = dot(N, V); // NOTE: Should be NdotH?
+    half specularDot = dot(N, H); // NOTE: Should be NdotH?
     half4 lighting = lit(NdotV, specularDot, toonData.specularPower);
     half3 specularColor = saturate(lighting.z) * toonData.specularMask.rgb * toonData.albedo;
     combinedColor += specularColor;
 
     // Reflection
     half3 reflectVector = reflect(-V, N);
-    half4 encodedReflection = unity_SpecCube0.SampleLevel(samplerunity_SpecCube0, reflectVector, 0);
+    half4 encodedReflection = unity_SpecCube0.SampleLevel(samplerunity_SpecCube0, reflectVector, 2);
     half3 reflectColor = DecodeHDREnvironment(encodedReflection, unity_SpecCube0_HDR);
     reflectColor = OverlayBlend(reflectColor, combinedColor);
 

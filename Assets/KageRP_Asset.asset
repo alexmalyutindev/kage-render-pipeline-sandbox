@@ -17,6 +17,7 @@ MonoBehaviour:
   Passes:
   - rid: 6020882162429722680
   - rid: 6020882026761289779
+  - rid: 508271271489830988
   - rid: 6020882026761289780
   - rid: 6020882026761289781
   - rid: 6020882062693892159
@@ -28,6 +29,10 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: 508271271489830988
+      type: {class: LocalShadowPass, ns: , asm: Assembly-CSharp}
+      data:
+        IsActive: 1
     - rid: 6020882026761289779
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
