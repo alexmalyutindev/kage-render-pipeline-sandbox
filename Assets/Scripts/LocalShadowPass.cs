@@ -9,12 +9,14 @@ using UnityEngine.Rendering.RenderGraphModule;
 [Serializable]
 public class LocalShadowPass : AbstractRenderGraphPass
 {
+    private const int MaxShadowCount = 4;
+
     private static readonly List<LocalShadow> LocalShadows = new();
     private static readonly List<Material> TempMaterials = new();
 
     public ShadowMapResolution Resolution = ShadowMapResolution._256;
 
-    private Matrix4x4[] _worldToShadow = new Matrix4x4[4];
+    private static Matrix4x4[] _worldToShadow = new Matrix4x4[MaxShadowCount];
 
     public static void Register(LocalShadow localShadow)
     {
@@ -39,7 +41,7 @@ public class LocalShadowPass : AbstractRenderGraphPass
     {
         public TextureHandle LocalShadowMap;
         public VisibleLight MainLight;
-        public Matrix4x4[] WorldToShadow;
+        public Matrix4x4[] WorldToShadowMap;
         public List<LocalShadow> LocalShadowCaster;
     }
 
@@ -56,7 +58,7 @@ public class LocalShadowPass : AbstractRenderGraphPass
 
         passData.MainLight = mainLight;
         passData.LocalShadowCaster = LocalShadows;
-        passData.WorldToShadow = _worldToShadow;
+        passData.WorldToShadowMap = _worldToShadow;
 
         var desc = new TextureDesc((int)Resolution, (int)Resolution)
         {
@@ -64,8 +66,11 @@ public class LocalShadowPass : AbstractRenderGraphPass
             format = GraphicsFormat.D16_UNorm,
             depthBufferBits = DepthBits.Depth16,
             isShadowMap = true,
+            clearBuffer = true,
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
             dimension = TextureDimension.Tex2DArray,
-            slices = 4,
+            slices = MaxShadowCount,
         };
         passData.LocalShadowMap = renderGraph.CreateTexture(desc);
         builder.UseTexture(passData.LocalShadowMap, AccessFlags.Write);
@@ -79,7 +84,7 @@ public class LocalShadowPass : AbstractRenderGraphPass
             cmd.SetGlobalVector("_MainLightPosition", mainLightDirection);
             cmd.SetGlobalVector("_ShadowBias", shadowBias);
 
-            for (var casterIndex = 0; casterIndex < data.LocalShadowCaster.Count && casterIndex < 4; casterIndex++)
+            for (var casterIndex = 0; casterIndex < data.LocalShadowCaster.Count && casterIndex < MaxShadowCount; casterIndex++)
             {
                 var localShadow = data.LocalShadowCaster[casterIndex];
                 var bounds = localShadow.Renderers[0].bounds;
@@ -110,11 +115,11 @@ public class LocalShadowPass : AbstractRenderGraphPass
                     renderer.shadowCastingMode = ShadowCastingMode.Off;
                 }
 
-                data.WorldToShadow[casterIndex] = CalculateWorldToShadowMatrix(view, proj);
+                data.WorldToShadowMap[casterIndex] = CalculateWorldToShadowMatrix(view, proj);
             }
 
             cmd.SetGlobalFloat("_EnableLocalShadow", 1.0f);
-            cmd.SetGlobalMatrixArray("_WorldToLocalShadow", data.WorldToShadow);
+            cmd.SetGlobalMatrixArray("_WorldToLocalShadow", data.WorldToShadowMap);
             cmd.SetGlobalTexture("_LocalShadow", data.LocalShadowMap);
         });
     }

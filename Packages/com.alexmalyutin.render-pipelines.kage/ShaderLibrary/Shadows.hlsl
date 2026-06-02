@@ -112,9 +112,6 @@ half GetMainLightShadow(float3 positionWS, float4 shadowCoords)
     shadowCoords.z = saturate(shadowCoords.z);
     half shadow = SampleMainLightShadowMap3x3(shadowCoords);
     half fade = GetMainLightShadowFade(positionWS);
-
-    // shadow = min(shadow, GetLocalShadow(positionWS));
-
     return lerp(shadow, 1.0h, fade);
     #else
     return 1.0h;

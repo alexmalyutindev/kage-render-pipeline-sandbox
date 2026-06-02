@@ -106,7 +106,6 @@ Shader "KageRP/Toon/Opaque"
                 half3 normalWS : TEXCOORD2;
                 half4 tangentWS : TEXCOORD3;
                 half3 viewDirectionWS : TEXCOORD4;
-                half shadowAttenuation : TEXCOORD5;
             };
 
             Varyings Vertex(Attributes input)
@@ -120,8 +119,6 @@ Shader "KageRP/Toon/Opaque"
                 output.tangentWS.xyz = TransformObjectToWorldNormal(input.tangentOS.xyz);
                 output.tangentWS.w = input.tangentOS.w * GetOddNegativeScale();
                 output.viewDirectionWS = GetWorldSpaceViewDirection(positionWS);
-
-                output.shadowAttenuation = GetMainLightShadow(positionWS, TransformWorldToShadowMap(positionWS));
                 return output;
             }
 
