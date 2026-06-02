@@ -43,10 +43,9 @@ namespace Rendering.KageRP
             var drawingSettings = new DrawingSettings(shaderPassName, new SortingSettings(cameraData.Camera))
             {
                 mainLightIndex = lightingData.MainLightIndex,
-                perObjectData = PerObjectData.LightData
-                    | PerObjectData.ReflectionProbes
-                // | PerObjectData.ReflectionProbeData
-                // | PerObjectData.LightProbe
+                perObjectData = PerObjectData.LightData | PerObjectData.LightIndices
+                    | PerObjectData.ReflectionProbes 
+                    | PerObjectData.LightProbe
             };
 
             var rendererListDesc = new RendererListParams()

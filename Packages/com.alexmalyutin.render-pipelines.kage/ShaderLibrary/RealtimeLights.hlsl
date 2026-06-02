@@ -11,6 +11,7 @@ struct Light
     half3 color;
     half3 direction;
     half shadowAttenuation;
+    half localShadowAttenuation;
     half distanceAttenuation;
 };
 
@@ -77,6 +78,7 @@ Light GetAdditionalPerObjectLight(int perObjectLightIndex, float3 positionWS)
     light.color = color;
     light.direction = lightDirection;
     light.shadowAttenuation = 1.0h;
+    light.localShadowAttenuation = 1.0h;
     light.distanceAttenuation = 
         DistanceAttenuation(distanceSqr, distanceAndSpotAttenuation.xy) * 
         AngleAttenuation(spotDirection.xyz, lightDirection, distanceAndSpotAttenuation.zw);
@@ -92,6 +94,7 @@ Light GetMainLight(float3 positionWS, float4 shadowCoords)
     light.color = _MainLightColor.rgb;
     light.direction = _MainLightPosition.xyz;
     light.shadowAttenuation = GetMainLightShadow(positionWS, shadowCoords);
+    light.localShadowAttenuation = GetLocalShadow(positionWS);
     light.distanceAttenuation = 1.0h;
     return light;
 }

@@ -33,6 +33,7 @@ MonoBehaviour:
       type: {class: LocalShadowPass, ns: , asm: Assembly-CSharp}
       data:
         IsActive: 1
+        Resolution: 128
     - rid: 6020882026761289779
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:

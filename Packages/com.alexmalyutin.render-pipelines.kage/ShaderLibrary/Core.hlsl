@@ -84,4 +84,18 @@ GBufferData ReadGBuffer(half4 gBuffer1, half4 gBuffer2)
     return data;
 }
 
+// 9-Tap Poisson Disk samples
+static const float2 PoissonDisk9[9] = 
+{
+    float2(-0.881090, -0.151152),
+    float2(-0.298967, -0.794178),
+    float2(-0.237407,  0.930438),
+    float2(-0.841575,  0.484197),
+    float2( 0.699039,  0.642921),
+    float2( 0.280424, -0.916327),
+    float2( 0.491297,  0.774439),
+    float2( 0.537909, -0.498442),
+    float2(-0.057790,  0.026871)
+};
+
 #endif

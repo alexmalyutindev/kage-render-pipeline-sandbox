@@ -191,7 +191,8 @@ half3 MobilePBR(BRDFData brdfData, InputData inputData)
     half3 diffuseIBL = (1.0h - brdfData.metallic) * brdfData.albedo * inputData.bakedGI;
     half3 ambient = (diffuseIBL + specularIBL) * brdfData.occlusion;
 
-    return directLighting * mainLight.shadowAttenuation + ambient + brdfData.emission;
+    return directLighting * min(mainLight.shadowAttenuation, mainLight.localShadowAttenuation) + 
+        ambient + brdfData.emission;
 }
 
 #endif

@@ -132,7 +132,7 @@ Shader "KageRP/Toon/Opaque"
 
                 half3 normalTS = SampleNormal(_NormalMap, sampler_NormalMap, input.uv, _NormalScale);
                 half3x3 tbn = CreateTangentToWorld(input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
-                half3 normalWS = TransformTangentToWorld(normalTS, tbn, false);
+                half3 normalWS = TransformTangentToWorld(normalTS, tbn, true);
 
                 #if defined(_SPECULAR_MAP)
                 half4 specularMask = _SpecularReflectionSampler.Sample(sampler_SpecularReflectionSampler, input.uv.xy);
@@ -143,14 +143,14 @@ Shader "KageRP/Toon/Opaque"
                 ToonData toonData;
                 toonData.albedo = diffSamplerColor.rgb;
                 toonData.alpha = 1.0h;
-                toonData.shadowColor = _ShadowColor.rgb;
+                toonData.shadowColor = lerp(SampleGI(input.normalWS), _ShadowColor.rgb, 0.5h);
                 toonData.specularMask = specularMask;
                 toonData.specularPower = _SpecularPower;
 
                 InputData inputData;
                 inputData.positionWS = input.positionWS;
                 inputData.normalWS = normalWS;
-                inputData.viewDirectionWS = input.viewDirectionWS;
+                inputData.viewDirectionWS = SafeNormalize(input.viewDirectionWS);
                 inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 inputData.normalizedScreenUV = 0.0h; // TODO
                 inputData.bakedGI = 0.0h; // TODO

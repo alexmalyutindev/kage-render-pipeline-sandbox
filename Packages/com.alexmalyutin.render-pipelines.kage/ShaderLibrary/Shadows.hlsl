@@ -1,6 +1,9 @@
 #ifndef KAGERP_SHADOWS
 #define KAGERP_SHADOWS
 
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/LocalShadows.hlsl"
+
 // x: depth bias,
 // y: normal bias,
 // z: light type (Spot = 0, Directional = 1, Point = 2, Area/Rectangle = 3, Disc = 4, Pyramid = 5, Box = 6, Tube = 7)
@@ -9,7 +12,6 @@ float4 _ShadowBias;
 float4x4 _WorldToMainLightShadow;
 // (x: shadowStrength, y: >= 1.0 if soft shadows, 0.0 otherwise, z: main light fade scale, w: main light fade bias)
 float4 _MainLightShadowParams;
-
 
 float3 ApplyShadowBias(float3 positionWS, float3 normalWS, float3 lightDirection)
 {
@@ -80,20 +82,6 @@ half SampleMainLightShadowMapPCF(float3 shadowCoords, float2 offset)
     return SampleMainLightShadowMapPCF(float3(shadowCoords.xy + offset, shadowCoords.z));
 }
 
-// 9-Tap Poisson Disk samples
-static const float2 PoissonDisk9[9] = 
-{
-    float2(-0.881090, -0.151152),
-    float2(-0.298967, -0.794178),
-    float2(-0.237407,  0.930438),
-    float2(-0.841575,  0.484197),
-    float2( 0.699039,  0.642921),
-    float2( 0.280424, -0.916327),
-    float2( 0.491297,  0.774439),
-    float2( 0.537909, -0.498442),
-    float2(-0.057790,  0.026871)
-};
-
 half SampleMainLightShadowMap3x3(float4 shadowCoords)
 {
     half attenuation = 0.0h;
@@ -124,6 +112,9 @@ half GetMainLightShadow(float3 positionWS, float4 shadowCoords)
     shadowCoords.z = saturate(shadowCoords.z);
     half shadow = SampleMainLightShadowMap3x3(shadowCoords);
     half fade = GetMainLightShadowFade(positionWS);
+
+    // shadow = min(shadow, GetLocalShadow(positionWS));
+
     return lerp(shadow, 1.0h, fade);
     #else
     return 1.0h;

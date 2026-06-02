@@ -96,7 +96,7 @@ Shader "Hidden/KageRP/Bloom"
                 // preserving hue and relative brightness
                 half brightness = Max3(color.r, color.g, color.b); // Luminance(color);
                 half compressed = brightness / (1.0h + brightness / ClampMax);
-                color *= compressed / max(brightness, 1e-4h);
+                color *= compressed / max(brightness, 1e-2h);
 
                 // Thresholding
                 half softness = clamp(brightness - Threshold + ThresholdKnee, 0.0, 2.0 * ThresholdKnee);
