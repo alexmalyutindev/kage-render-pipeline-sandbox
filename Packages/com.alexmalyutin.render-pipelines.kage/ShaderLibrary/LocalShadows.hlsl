@@ -52,9 +52,12 @@ half GetLocalShadow(float3 positionWS)
         // TODO: Add support for several local shadows!
         uint index = 0;
         float4 shadowCoords = mul(_WorldToLocalShadow[index], float4(positionWS, 1.0f));
-        shadowCoords.z = saturate(shadowCoords.z);
+        shadowCoords /= shadowCoords.w;
+
         float2 dist = (shadowCoords.xy - 0.5f) * 2.0f;
         if (dot(dist, dist) > 1.0f) return 1.0h;
+
+        shadowCoords.z = clamp(shadowCoords.z, 0.001f, 0.999f);
 
         return SampleLocalShadowMap3x3(shadowCoords.xyz, index);
     }

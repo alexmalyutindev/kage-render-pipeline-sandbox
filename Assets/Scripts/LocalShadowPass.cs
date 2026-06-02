@@ -63,18 +63,20 @@ public class LocalShadowPass : AbstractRenderGraphPass
         var desc = new TextureDesc((int)Resolution, (int)Resolution)
         {
             name = "_LocalShadowAtlas",
-            format = GraphicsFormat.D16_UNorm,
+            format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.Shadowmap, false),
             depthBufferBits = DepthBits.Depth16,
-            isShadowMap = true,
-            clearBuffer = true,
             filterMode = FilterMode.Bilinear,
+            isShadowMap = true,
+            clearBuffer = false,
+
             wrapMode = TextureWrapMode.Clamp,
             dimension = TextureDimension.Tex2DArray,
             slices = MaxShadowCount,
         };
         passData.LocalShadowMap = renderGraph.CreateTexture(desc);
-        builder.UseTexture(passData.LocalShadowMap, AccessFlags.Write);
+        builder.UseTexture(passData.LocalShadowMap);
 
+        builder.SetGlobalTextureAfterPass(passData.LocalShadowMap, Shader.PropertyToID("_LocalShadow"));
         builder.SetRenderFunc<PassData>(static (data, context) =>
         {
             var cmd = context.cmd;
@@ -84,7 +86,9 @@ public class LocalShadowPass : AbstractRenderGraphPass
             cmd.SetGlobalVector("_MainLightPosition", mainLightDirection);
             cmd.SetGlobalVector("_ShadowBias", shadowBias);
 
-            for (var casterIndex = 0; casterIndex < data.LocalShadowCaster.Count && casterIndex < MaxShadowCount; casterIndex++)
+            for (var casterIndex = 0;
+                casterIndex < data.LocalShadowCaster.Count && casterIndex < MaxShadowCount;
+                casterIndex++)
             {
                 var localShadow = data.LocalShadowCaster[casterIndex];
                 var bounds = localShadow.Renderers[0].bounds;
@@ -93,10 +97,20 @@ public class LocalShadowPass : AbstractRenderGraphPass
                     if (localShadow.Renderers[i] != null) bounds.Encapsulate(localShadow.Renderers[i].bounds);
                 }
 
-                localShadow.GetViewProjectionForLightShadow(data.MainLight.light, out var view, out var proj);
+                var id = new RenderTargetIdentifier(data.LocalShadowMap, 0, CubemapFace.Unknown, casterIndex);
+                cmd.SetRenderTarget(
+                    id, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare,
+                    id, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
+                );
+                cmd.ClearRenderTarget(
+                    true,
+                    false,
+                    Color.clear,
+                    SystemInfo.usesReversedZBuffer ? 1.0f : 0.0f,
+                    0
+                );
 
-                cmd.SetRenderTarget(data.LocalShadowMap);
-                cmd.ClearRenderTarget(true, false, Color.clear);
+                localShadow.GetViewProjectionForLightShadow(data.MainLight.light, out var view, out var proj);
                 cmd.SetViewProjectionMatrices(view, proj);
 
                 foreach (var renderer in localShadow.Renderers)
@@ -120,29 +134,18 @@ public class LocalShadowPass : AbstractRenderGraphPass
 
             cmd.SetGlobalFloat("_EnableLocalShadow", 1.0f);
             cmd.SetGlobalMatrixArray("_WorldToLocalShadow", data.WorldToShadowMap);
-            cmd.SetGlobalTexture("_LocalShadow", data.LocalShadowMap);
         });
     }
 
+    private static readonly Matrix4x4 BiasMat = new(
+        new Vector4(0.5f, 0f, 0f, 0f),
+        new Vector4(0f, 0.5f, 0f, 0f),
+        new Vector4(0f, 0f, -0.5f, 0f),
+        new Vector4(0.5f, 0.5f, 0.5f, 1f)
+    );
 
     public static Matrix4x4 CalculateWorldToShadowMatrix(Matrix4x4 view, Matrix4x4 proj)
     {
-        Matrix4x4 viewProj = proj * view;
-
-        Matrix4x4 scaleBias = Matrix4x4.identity;
-        scaleBias.m00 = 0.5f;
-        scaleBias.m03 = 0.5f;
-        scaleBias.m11 = 0.5f;
-        scaleBias.m13 = 0.5f;
-        scaleBias.m22 = 0.5f;
-        scaleBias.m23 = 0.5f;
-
-        if (SystemInfo.usesReversedZBuffer)
-        {
-            scaleBias.m22 = -0.5f;
-            scaleBias.m23 = 0.5f;
-        }
-
-        return scaleBias * viewProj;
+        return BiasMat * proj * view;
     }
 }
