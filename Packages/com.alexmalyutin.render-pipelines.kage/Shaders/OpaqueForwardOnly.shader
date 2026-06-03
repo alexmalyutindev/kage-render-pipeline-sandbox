@@ -121,6 +121,7 @@ Shader "KageRP/OpaqueForwardOnly"
                 inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 inputData.bakedGI = SampleGI(normalWS);
                 inputData.viewDirectionWS = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
+                inputData.normalizedScreenUV = input.postionCS.xy * _ScreenSize.zw;
 
                 MaterialData materialData;
                 materialData.albedo = albedoAlpha.rgb;

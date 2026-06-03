@@ -33,6 +33,15 @@ half3 OverlayBlend(half3 upper, half3 lower)
     return lerp(lowerResult, greaterResult, round(lower));
 }
 
+half3 ToonLighting_SingleLight(ToonData toonData, InputData inputData, Light light)
+{
+    half3 N = inputData.normalWS;
+    half3 L = light.direction;
+    half NdotL = dot(N, L);
+    half lighting = smoothstep(-0.3h, 0.0h, NdotL) * light.distanceAttenuation;
+    return toonData.albedo * light.color.rgb * lighting * FALLOFF_POWER;
+}
+
 half3 ToonLighting(ToonData toonData, InputData inputData)
 {
     Light mainLight = GetMainLight(inputData.positionWS, inputData.shadowCoord);

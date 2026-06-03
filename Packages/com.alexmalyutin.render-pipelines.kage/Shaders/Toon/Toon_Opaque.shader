@@ -151,9 +151,17 @@ Shader "KageRP/Toon/Opaque"
                 inputData.shadowCoord = TransformWorldToShadowMap(input.positionWS);
                 inputData.normalizedScreenUV = 0.0h; // TODO
                 inputData.bakedGI = 0.0h; // TODO
-                half3 toonLighting = ToonLighting(toonData, inputData);
+                half3 color = ToonLighting(toonData, inputData);
 
-                return half4(toonLighting, 1.0h);
+                uint pixelLightCount = GetAdditionalLightsCount();
+                for (uint i = 0; i < pixelLightCount; i++)
+                {
+                    Light light = GetAdditionalLight(i, input.positionWS);
+                    color += ToonLighting_SingleLight(toonData, inputData, light);
+                }
+
+
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }
