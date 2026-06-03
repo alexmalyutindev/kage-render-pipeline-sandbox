@@ -48,7 +48,11 @@ public class LocalShadowPass : AbstractRenderGraphPass
     public override void Record(RenderGraph renderGraph, ContextContainer frameData)
     {
         var lightingData = frameData.Get<LightingData>();
-        if (lightingData.MainLightIndex < 0) return;
+        if (lightingData.MainLightIndex < 0)
+        {
+            Shader.SetGlobalFloat("_EnableLocalShadow", 0.0f);
+            return;
+        }
 
         var cullingResultData = frameData.Get<CullingResultData>();
         var mainLight = cullingResultData.CullingResult.visibleLights[lightingData.MainLightIndex];
@@ -80,6 +84,12 @@ public class LocalShadowPass : AbstractRenderGraphPass
         builder.SetRenderFunc<PassData>(static (data, context) =>
         {
             var cmd = context.cmd;
+
+            if (data.LocalShadowCaster.Count == 0)
+            {
+                cmd.SetGlobalFloat("_EnableLocalShadow", 0.0f);
+                return;
+            }
 
             var mainLightDirection = -data.MainLight.localToWorldMatrix.GetColumn(2);
             var shadowBias = new Vector4(data.MainLight.light.shadowBias, 0.0f);

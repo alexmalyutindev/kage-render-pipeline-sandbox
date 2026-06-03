@@ -38,7 +38,7 @@ MonoBehaviour:
       type: {class: MainLightShadowPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        Resolution: 1024
+        Resolution: 512
         DepthBits: 8
         ShadowDistance: 30
         ShadowFade: 0.25
@@ -47,7 +47,7 @@ MonoBehaviour:
       data:
         IsActive: 1
         UseRenderScale: 1
-        RenderSacle: 0.75
+        RenderSacle: 0.7
     - rid: 6020882026761289781
       type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
@@ -83,7 +83,7 @@ MonoBehaviour:
       type: {class: BloomPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        BlurTaps: 2
+        BlurTaps: 3
         Threshold: 1
         Scatter: 0.7
         ClampMax: 5
