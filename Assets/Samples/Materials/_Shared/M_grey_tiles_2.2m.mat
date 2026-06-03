@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_grey_tiles_2.2m
+  m_Shader: {fileID: 4800000, guid: c27dfdddd3e6419dbcea979b5bb3d9fe, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _HEIGHT_MAP
+  - _OCCLUSION_MAP
+  m_InvalidKeywords:
+  - 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BRDF_LUT:
+        m_Texture: {fileID: 2800000, guid: b157dedcbf48b4f43a35ab0070deb854, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 336a06db651c04326b650a2d9f92a8b2, type: 3}
+        m_Scale: {x: 0.45454547, y: 0.4545455}
+        m_Offset: {x: 0, y: 0}
+    - _HeightMap:
+        m_Texture: {fileID: 2800000, guid: bf88ab17ca6a84ad5b6d964688f0c322, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 2800000, guid: c8740b148eb4a41dfaf8458b147caa3b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 2800000, guid: c4eb883a992c84a6e902d598f4d8e5dc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RoughnessMap:
+        m_Texture: {fileID: 2800000, guid: 1ac35a4ce744242538f5052ea156277a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints:
+    - _StencilBit: 0
+    m_Floats:
+    - _AlphaTest: 0
+    - _CullMode: 2
+    - _Metallic: 0
+    - _NormalScale: 1
+    - _Parallax: 0.04
+    - _Roughness: 1
+    m_Colors:
+    - _BaseColor: {r: 0.8301887, g: 0.8301887, b: 0.8301887, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
