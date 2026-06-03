@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -8,6 +9,8 @@ namespace Rendering.KageRP
     {
         public Shader BlitShader;
         public Shader BlitColorAndDepth;
+
+        public DefaultMaterials DefaultMaterials;
 
         [Header("Textures")]
         public Texture BRDF_LUT;
@@ -21,5 +24,12 @@ namespace Rendering.KageRP
         [Space]
         public Material SSAOMaterial;
         public Material BloomMaterial;
+    }
+
+    [Serializable]
+    public class DefaultMaterials
+    {
+        public Material Opaque;
+        public Material Terrain;
     }
 }

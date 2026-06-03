@@ -110,7 +110,7 @@ namespace Rendering.KageRP
             var light = cullingResultData.CullingResult.visibleLights[lightingData.MainLightIndex].light;
             passData.ShadowBias = new Vector4(
                 light.shadowBias,
-                light.shadowNormalBias,
+                -light.shadowNormalBias,
                 (int)light.type
             );
 

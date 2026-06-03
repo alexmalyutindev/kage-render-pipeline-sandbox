@@ -19,7 +19,9 @@ namespace Rendering.KageRP
             new SkyboxPass(),
             new FinalBlitPass(),
         };
-        
+
+        public override Material defaultMaterial => DefaultResources.DefaultMaterials.Opaque;
+        public override Shader defaultShader => DefaultResources.DefaultMaterials.Opaque.shader;
 
         protected override RenderPipeline CreatePipeline()
         {

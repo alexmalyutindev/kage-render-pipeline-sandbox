@@ -17,6 +17,9 @@ Shader "KageRP/Opaque"
         [SingleLineTex] _MetallicMap ("Metallic Map", 2D) = "white" {}
         [SingleLineTex] _RoughnessMap ("Roughness Map", 2D) = "white" {}
         [SingleLineTex(_OCCLUSION_MAP)] _OcclusionMap ("Occlusion Map", 2D) = "white" {}
+        
+        [HDR] _EmissionColor("_EmissionColor", Color) = (0, 0, 0, 0)
+        
 
         [Space]
         _Parallax("Parallax", Range(0.0, 0.08)) = 0.04
@@ -41,6 +44,7 @@ Shader "KageRP/Opaque"
         #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/GlobalSamplers.hlsl"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseColor;
+            float4 _EmissionColor;
             float4 _BaseMap_ST;
             float _Metallic;
             float _Roughness;
@@ -169,7 +173,7 @@ Shader "KageRP/Opaque"
                 materialData.occlusion = occlusion * GetSSAO(inputData.normalizedScreenUV);
                 materialData.normalTS = normalTS;
                 materialData.alpha = 1.0h;
-                materialData.emission = 0.0h;
+                materialData.emission = _EmissionColor.rgb;
 
                 BRDFData brdf = InitBRDFData(materialData);
                 half3 color = MobilePBR(brdf, inputData);

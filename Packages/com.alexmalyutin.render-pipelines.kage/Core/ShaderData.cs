@@ -55,6 +55,7 @@ namespace Rendering.KageRP
 
         ComputeBuffer GetOrUpdateBuffer<T>(ref ComputeBuffer buffer, int size) where T : struct
         {
+            size = Mathf.Max(1, size);
             if (buffer == null)
             {
                 buffer = new ComputeBuffer(size, Marshal.SizeOf<T>());
