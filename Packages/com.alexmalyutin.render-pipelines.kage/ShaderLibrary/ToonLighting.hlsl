@@ -25,6 +25,11 @@ struct ToonData
     half specularPower;
 };
 
+half CelStep(half v, half threshold, half feather)
+{
+    return smoothstep(threshold - feather, threshold + feather, v);
+}
+
 // Overlay blend: used to composite env-map reflection onto base color
 half3 OverlayBlend(half3 upper, half3 lower)
 {

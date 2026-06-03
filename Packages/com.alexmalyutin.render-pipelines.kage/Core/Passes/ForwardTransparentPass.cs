@@ -132,7 +132,7 @@ namespace Rendering.KageRP
                         // z = -cosOuter * cosRangeRcp  (additive bias term)
                         // w =  cosRangeRcp             (scale term)
                         // In shader: saturate(dot(L, spotDir) * w + z)
-                        spotAttenZW = new Vector2(-cosOuter * cosRangeRcp, cosRangeRcp);
+                        spotAttenZW = new Vector2(cosRangeRcp, -cosOuter * cosRangeRcp);
                     }
 
                     additionalLightsData[lightIter] = new ShaderTypes.LightData

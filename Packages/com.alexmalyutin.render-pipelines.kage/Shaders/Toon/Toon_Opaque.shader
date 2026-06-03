@@ -59,12 +59,6 @@ Shader "KageRP/Toon/Opaque"
         #define SampleRimFalloff(t) (_RimLightSampler.Sample(sampler_LinearClamp, float2(t, 0.25f)).x)
         #include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/ToonLighting.hlsl"
 
-        // Feathered cel step — the spine of every hard-edge effect
-        half CelStep(half v, half threshold, half feather)
-        {
-            return smoothstep(threshold - feather, threshold + feather, v);
-        }
-
         half3 SampleNormal(TEXTURE2D_PARAM(tex, samp), float2 uv, float scale)
         {
             return UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, uv), scale);
