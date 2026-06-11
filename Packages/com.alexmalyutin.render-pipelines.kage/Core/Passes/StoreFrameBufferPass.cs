@@ -70,6 +70,7 @@ namespace Rendering.KageRP
             {
                 var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                 cmd.Blit(data.SrcColor, data.DstColor);
+                // TODO: Read linear depth from GBuffer2.b!
                 cmd.Blit(data.SrcDepth, data.DstDepth);
             });
         }

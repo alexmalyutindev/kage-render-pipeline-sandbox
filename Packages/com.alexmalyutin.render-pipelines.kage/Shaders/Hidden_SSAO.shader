@@ -171,7 +171,7 @@ Shader "Hidden/KageRP/SSAO"
             HLSLPROGRAM
             #pragma vertex FullScreenVertex
             #pragma fragment Fragment
-            
+
             Texture2D<half> _BayerMatrix;
 
             float4 _GTAO_Params;
@@ -352,6 +352,98 @@ Shader "Hidden/KageRP/SSAO"
 
                 visibility *= 0.5f * sliceCountRcp;
                 return 1.0h - saturate(visibility);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "HBAO+"
+            Cull Off
+            Blend DstColor Zero
+
+            HLSLPROGRAM
+            #pragma vertex FullScreenVertex
+            #pragma fragment Fragment
+
+            #define NUM_STEPS 3
+            #define NUM_DIRECTIONS 4
+
+            // .x = Sampling Radius, .y = Angle Bias, .z = Max Distance Cutoff, .w = Stride Multiplier
+            static float4 _HBAOParams = float4(4.0f, 0.01f, 50.0f, 1.0f);
+            Texture2DArray<float> _DeinterleavedDepthArray;
+            Texture2D<half4> _GBuffer2;
+
+            half ComputeHBAOForSlice(float2 uv, float3 viewPos, half3 viewNormal, uint sliceID)
+            {
+                half aoAccum = 0.0f;
+                float stepRadius = _HBAOParams.x;
+                float bias = _HBAOParams.y;
+
+                float randomAngle = GenerateHashedRandomFloat(uv * _ScreenSize.xy);
+
+                float2 lowResTexelSize = _ScreenSize.zw * 4.0f;
+
+                [unroll]
+                for (uint d = 0; d < NUM_DIRECTIONS; d++)
+                {
+                    float angle = ((float)d + randomAngle) * (2.0f * PI / (float)NUM_DIRECTIONS);
+                    float2 dir = float2(cos(angle), sin(angle)) * lowResTexelSize;
+
+                    half maxHorizonSin = -1.0f; 
+
+                    [unroll]
+                    for (uint s = 1; s <= NUM_STEPS; s++)
+                    {
+                        // Stride calculations stay localized within the current deinterleaved array texture slice index
+                        // A step of 1 inside the sub-buffer safely equals a step of 4 pixels wide on-screen
+                        float2 sampleUV = uv + dir * (float)s * stepRadius;
+
+                        float sampleRawDepth = _DeinterleavedDepthArray.SampleLevel(sampler_PointClamp, float3(sampleUV, sliceID), 0).r;
+                        
+                        if (sampleRawDepth >= _HBAOParams.z) continue;
+
+                        float3 sampleViewPos = ReconstructPositionVS(sampleUV, sampleRawDepth);
+                        float3 horizonVec = sampleViewPos - viewPos;
+                        
+                        float distSq = dot(horizonVec, horizonVec);
+                        float invDist = rsqrt(distSq);
+                        
+                        half sinElevation = (half)(horizonVec.z * invDist);
+
+                        maxHorizonSin = max(maxHorizonSin, sinElevation);
+                    }
+
+                    half angleOcclusion = max(0.0f, maxHorizonSin - bias);
+                    aoAccum += angleOcclusion;
+                }
+
+                return saturate(1.0f - (aoAccum / (half)NUM_DIRECTIONS));
+            }
+
+            half4 Fragment(Varyings input) : SV_Target
+            {
+                float2 uv = input.uv;
+                uint2 pixelCoord = uint2(uv * _ScreenSize.xy);
+
+                half4 gBufferData = _GBuffer2.SampleLevel(sampler_PointClamp, uv, 0);
+                half3 normalVS;
+                normalVS.xy = gBufferData.xy;
+                normalVS.z = sqrt(max(0.00001f, 1.0f - dot(normalVS.xy, normalVS.xy)));
+
+                float centerDepth = gBufferData.z;
+
+                if (centerDepth >= _HBAOParams.z) return half4(1.0f, 1.0f, 1.0f, 1.0f);
+
+                float3 viewPos = ReconstructPositionVS(uv, centerDepth);
+
+                uint gridX = pixelCoord.x % 4;
+                uint gridY = pixelCoord.y % 4;
+                uint sliceID = gridY * 4 + gridX;
+
+                half finalAO = ComputeHBAOForSlice(uv, viewPos, normalVS, sliceID);
+
+                return finalAO;
             }
             ENDHLSL
         }

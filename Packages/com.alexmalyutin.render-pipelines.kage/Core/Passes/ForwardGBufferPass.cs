@@ -77,7 +77,7 @@ namespace Rendering.KageRP
             {
                 name = "GBuffer2",
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGBHalf, false),
-                memoryless = RenderTextureMemoryless.Color,
+                // memoryless = RenderTextureMemoryless.Color, // NOTE: Temporary store buffer to use in HBAO+
                 msaaSamples = MSAASamples,
                 wrapMode = TextureWrapMode.Clamp,
             };

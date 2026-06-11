@@ -1,0 +1,41 @@
+#pragma kernel CSMain
+
+#include "Packages/com.alexmalyutin.render-pipelines.kage/ShaderLibrary/Core.hlsl"
+
+Texture2D<float> _FullResDepth;
+
+// Deinterleaved 16-slice quarter-resolution depth array
+RWTexture2DArray<float> _DeinterleavedDepthArray;
+
+// xy - full-res dimensions
+// zw - low-res slice dimensions
+float4 _DeinterleaveParams;
+
+// Local thread block size optimized for mobile Valhall architectures (Mali-G615)
+// A 64-thread layout (8x8) aligns perfectly with modern mobile wave/warp sizes
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint2 fullResCoord = id.xy;
+
+    if (fullResCoord.x >= (uint)_DeinterleaveParams.x || fullResCoord.y >= (uint)_DeinterleaveParams.y)
+    {
+        return;
+    }
+
+    float rawDepth = _FullResDepth[fullResCoord];
+    // TODO: Use linear depth input!
+    rawDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
+
+    uint gridX = fullResCoord.x % 4;
+    uint gridY = fullResCoord.y % 4;
+
+    uint sliceID = gridY * 4 + gridX;
+
+    uint2 lowResCoord = fullResCoord / 4;
+
+    if (lowResCoord.x < (uint)_DeinterleaveParams.z && lowResCoord.y < (uint)_DeinterleaveParams.w)
+    {
+        _DeinterleavedDepthArray[uint3(lowResCoord, sliceID)] = rawDepth;
+    }
+}
