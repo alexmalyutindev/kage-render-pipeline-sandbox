@@ -6,7 +6,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 namespace Rendering.KageRP
 {
     [System.Serializable]
-    public class DeinterleavedDepthPass : AbstractRenderGraphPass
+    public class HBAOPlus : AbstractRenderGraphPass
     {
         private static readonly int _DeinterleaveParams = Shader.PropertyToID("_DeinterleaveParams");
         private static readonly int _FullResDepth = Shader.PropertyToID("_FullResDepth");
@@ -30,11 +30,11 @@ namespace Rendering.KageRP
             public TextureHandle DeinterleavedArrayTex;
         }
         
-        private class PassData2
+        private class HBAOPassData
         {
             public TextureHandle GBuffer2;
             public TextureHandle InterleavedDepth;
-            public TextureHandle Target;
+            public TextureHandle Occlusion;
 
             public Material Material;
         }
@@ -49,7 +49,6 @@ namespace Rendering.KageRP
             if (_deinterleavedDepth == null) return;
 
             var cameraData = frameData.Get<CameraData>();
-            var gBufferData = frameData.Get<GBufferData>();
 
             int fullWidth = cameraData.CameraBackBufferDescriptor.width;
             int fullHeight = cameraData.CameraBackBufferDescriptor.height;
@@ -58,6 +57,7 @@ namespace Rendering.KageRP
 
             var persistentFrameData = frameData.Get<PersistentFrameData>();
             if (!persistentFrameData.Context.Contains<PrevFrameBufferData>()) return;
+
             var prevFrameBufferData = persistentFrameData.Context.Get<PrevFrameBufferData>();
             var prevFrameDepth = prevFrameBufferData.GetFrameDepth(renderGraph);
             if (!prevFrameDepth.IsValid()) return;
@@ -76,11 +76,10 @@ namespace Rendering.KageRP
             using (var builder = renderGraph.AddComputePass<PassData>("DeinterleavedDepthPass", out var passData))
             {
                 builder.AllowPassCulling(false);
-                // builder.EnableAsyncCompute(true);
 
                 passData.FullWidth = fullWidth;
                 passData.FullHeight = fullHeight;
-                passData.FullResDepthTex = gBufferData.Depth;
+                passData.FullResDepthTex = prevFrameDepth;
                 builder.UseTexture(passData.FullResDepthTex);
 
                 passData.DeinterleavedArrayTex = deinterleavedArrayTex;
@@ -90,8 +89,6 @@ namespace Rendering.KageRP
                 passData.KernelId = _deinterleavedDepth.FindKernel("CSMain");
                 passData.DeinterleaveParams = new Vector4(fullWidth, fullHeight, lowWidth, lowHeight);
 
-                builder.SetGlobalTextureAfterPass(passData.DeinterleavedArrayTex,
-                    Shader.PropertyToID("_DeinterleavedDepthArray"));
                 builder.SetRenderFunc<PassData>(static (data, context) =>
                 {
                     var cmd = context.cmd;
@@ -108,22 +105,37 @@ namespace Rendering.KageRP
                 });
             }
 
-            using (var builder = renderGraph.AddUnsafePass<PassData2>("HBAO+", out var passData))
+            using (var builder = renderGraph.AddRasterRenderPass<HBAOPassData>("HBAO+", out var passData))
             {
-                passData.Material = _defaultResources.SSAOMaterial;
-                passData.GBuffer2 = gBufferData.GBuffer2;
-                builder.UseTexture(passData.GBuffer2);
+                builder.AllowPassCulling(false);
+                builder.AllowGlobalStateModification(true);
 
+                var frameDesc = cameraData.CameraBackBufferDescriptor;
+                var ssaoDesc = new TextureDesc(frameDesc.width / 4, frameDesc.height / 4)
+                {
+                    name = "_OcclusionTexture_HBAO+",
+                    format = GraphicsFormat.R8_UNorm,
+                    clearBuffer = false,
+                    clearColor = Color.clear,
+                    memoryless = RenderTextureMemoryless.None,
+                };
+                passData.Occlusion = renderGraph.CreateTexture(ssaoDesc);
+
+                var ssaoData = frameData.Create<SSAOData>();
+                ssaoData.OcclusionTexture = passData.Occlusion;
+
+                passData.Material = _defaultResources.SSAOMaterial;
                 passData.InterleavedDepth = deinterleavedArrayTex;
                 builder.UseTexture(passData.InterleavedDepth);
-                passData.Target = cameraData.CameraActiveColor;
-                builder.UseTexture(passData.Target, AccessFlags.Write);
 
-                builder.SetRenderFunc<PassData2>(static (data, context) =>
+                builder.SetRenderAttachment(passData.Occlusion, 0, AccessFlags.ReadWrite);
+                builder.SetGlobalTextureAfterPass(passData.Occlusion, Shader.PropertyToID("_OcclusionTexture"));
+                builder.SetRenderFunc<HBAOPassData>(static (data, context) =>
                 {
-                    var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                    cmd.SetGlobalTexture("_GBuffer2", data.GBuffer2);
-                    cmd.Blit(data.GBuffer2, data.Target, data.Material, 5);
+                    var cmd = context.cmd;
+                    // TODO: Use material property block!
+                    cmd.SetGlobalTexture("_DeinterleavedDepthArray", data.InterleavedDepth);
+                    cmd.DrawProcedural(Matrix4x4.identity, data.Material, 5, MeshTopology.Triangles, 3);
                 });
             }
         }

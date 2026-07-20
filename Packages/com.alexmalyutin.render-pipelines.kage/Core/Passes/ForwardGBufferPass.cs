@@ -34,6 +34,7 @@ namespace Rendering.KageRP
             public Matrix4x4 View;
             public Matrix4x4 Proj;
             public bool MainLightShadowOn;
+            public bool AmbientOcclusionOn;
         }
 
         // Forward + SlimGBuffer
@@ -77,7 +78,7 @@ namespace Rendering.KageRP
             {
                 name = "GBuffer2",
                 format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.ARGBHalf, false),
-                // memoryless = RenderTextureMemoryless.Color, // NOTE: Temporary store buffer to use in HBAO+
+                memoryless = RenderTextureMemoryless.Color,
                 msaaSamples = MSAASamples,
                 wrapMode = TextureWrapMode.Clamp,
             };
@@ -134,6 +135,13 @@ namespace Rendering.KageRP
             {
                 passData.MainLightShadowOn = false;
             }
+            
+            if (frameData.Contains<SSAOData>())
+            {
+                var ssaoData = frameData.Get<SSAOData>();
+                passData.AmbientOcclusionOn = true;
+                builder.UseTexture(ssaoData.OcclusionTexture, AccessFlags.Read);
+            }
 
             builder.SetRenderAttachment(passData.GBuffer0, 0);
             builder.SetRenderAttachment(passData.GBuffer1, 1);
@@ -145,6 +153,9 @@ namespace Rendering.KageRP
             {
                 if (data.MainLightShadowOn) context.cmd.EnableShaderKeyword("MAIN_LIGHT_SHADOW_ON");
                 else context.cmd.DisableShaderKeyword("MAIN_LIGHT_SHADOW_ON");
+                
+                if (data.AmbientOcclusionOn) context.cmd.EnableShaderKeyword("SSAO_ON");
+                else context.cmd.DisableShaderKeyword("SSAO_ON");
 
                 context.cmd.SetGlobalVector("_ScreenSize", data.ScreenSize);
                 context.cmd.SetViewProjectionMatrices(data.View, data.Proj);

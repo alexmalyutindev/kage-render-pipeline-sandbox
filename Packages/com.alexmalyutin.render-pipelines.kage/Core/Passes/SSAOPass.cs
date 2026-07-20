@@ -55,6 +55,8 @@ namespace Rendering.KageRP
 
             if (passData.SSAOActive)
             {
+                var ssaoData = frameData.Create<SSAOData>();
+
                 passData.Material = _defaultResources.SSAOMaterial;
                 passData.Params = new Vector4(_settings.OcclusionRadius, _settings.OcclusionThickness);
                 passData.BayerMatrix = _defaultResources.BayerMatrix;
@@ -71,6 +73,7 @@ namespace Rendering.KageRP
                 };
                 passData.Occlusion = renderGraph.CreateTexture(ssaoDesc);
                 builder.UseTexture(passData.Occlusion, AccessFlags.ReadWrite);
+                ssaoData.OcclusionTexture = passData.Occlusion;
 
                 ssaoDesc.name = "_SSAO_Temp";
                 passData.Temp = renderGraph.CreateTexture(ssaoDesc);
@@ -118,8 +121,6 @@ namespace Rendering.KageRP
                 cmd.Blit(data.Occlusion, data.Temp, data.Material, 0);
                 cmd.SetGlobalVector("_Direction", new Vector4(0, 1));
                 cmd.Blit(data.Temp, data.Occlusion, data.Material, 0);
-
-                cmd.EnableShaderKeyword("SSAO_ON");
             });
         }
 

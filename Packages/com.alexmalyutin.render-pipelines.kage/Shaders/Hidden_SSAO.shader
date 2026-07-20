@@ -42,6 +42,24 @@ Shader "Hidden/KageRP/SSAO"
             return output;
         }
 
+        Varyings FullScreenVertexProcedural(uint vertexID : SV_VertexID)
+        {
+            Varyings output;
+
+            float2 ndc;
+            ndc.x = (vertexID == 2) ?  3.0f : -1.0f;
+            ndc.y = (vertexID == 1) ? -3.0f :  1.0f;
+
+            output.positionCS = float4(ndc, UNITY_NEAR_CLIP_VALUE, 1.0f);
+            output.uv = mad(ndc, 0.5f, 0.5f);
+
+            #if UNITY_UV_STARTS_AT_TOP
+                output.uv.y = 1.0f - output.uv.y;
+            #endif
+
+            return output;
+        }
+
         float3 ReconstructPositionVS(float2 uv, float eyeDepth)
         {
             float2 ndc = mad(uv, 2.0f, -1.0f);
@@ -360,17 +378,18 @@ Shader "Hidden/KageRP/SSAO"
         {
             Name "HBAO+"
             Cull Off
-            Blend DstColor Zero
+            ZTest Off
+            ZWrite Off
 
             HLSLPROGRAM
-            #pragma vertex FullScreenVertex
+            #pragma vertex FullScreenVertexProcedural
             #pragma fragment Fragment
 
             #define NUM_STEPS 3
             #define NUM_DIRECTIONS 4
 
             // .x = Sampling Radius, .y = Angle Bias, .z = Max Distance Cutoff, .w = Stride Multiplier
-            static float4 _HBAOParams = float4(4.0f, 0.01f, 50.0f, 1.0f);
+            static float4 _HBAOParams = float4(4.0f, 0.5f, 50.0f, 1.0f);
             Texture2DArray<float> _DeinterleavedDepthArray;
             Texture2D<half4> _GBuffer2;
 
@@ -426,21 +445,23 @@ Shader "Hidden/KageRP/SSAO"
                 float2 uv = input.uv;
                 uint2 pixelCoord = uint2(uv * _ScreenSize.xy);
 
-                half4 gBufferData = _GBuffer2.SampleLevel(sampler_PointClamp, uv, 0);
+                // half4 gBufferData = _GBuffer2.SampleLevel(sampler_PointClamp, uv, 0);
+                half4 gBufferData = 0.0h;
+
                 half3 normalVS;
                 normalVS.xy = gBufferData.xy;
                 normalVS.z = sqrt(max(0.00001f, 1.0f - dot(normalVS.xy, normalVS.xy)));
 
-                float centerDepth = gBufferData.z;
+                uint gridX = pixelCoord.x % 4;
+                uint gridY = pixelCoord.y % 4;
+                uint sliceID = gridY * 4 + gridX;
+                
+                float2 sliceUV = (floor(float2(pixelCoord) / 4.0f) + 0.5f) * (_ScreenSize.zw * 4.0f);
+                float centerDepth = _DeinterleavedDepthArray.SampleLevel(sampler_PointClamp, float3(sliceUV, sliceID), 0).r;
 
                 if (centerDepth >= _HBAOParams.z) return half4(1.0f, 1.0f, 1.0f, 1.0f);
 
                 float3 viewPos = ReconstructPositionVS(uv, centerDepth);
-
-                uint gridX = pixelCoord.x % 4;
-                uint gridY = pixelCoord.y % 4;
-                uint sliceID = gridY * 4 + gridX;
-
                 half finalAO = ComputeHBAOForSlice(uv, viewPos, normalVS, sliceID);
 
                 return finalAO;
