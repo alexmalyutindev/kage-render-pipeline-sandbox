@@ -14,25 +14,20 @@ Shader "Hidden/KageRP/SGSR1"
         #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/GlobalSamplers.hlsl"
 
         float4 _SGSR_Params;
-        float4 _SGSR_ViewportInfo;
+        float4 _MainTex_TexelSize;
         Texture2D<half4> _MainTex;
 
         #define OperationMode (_SGSR_Params.x)
         #define EdgeSharpness (_SGSR_Params.y)
-        #define InputTexture (_MainTex)
 
-        half4 SGSRRH(float2 p) { return InputTexture.GatherRed(sampler_LinearClamp, p); }
-        half4 SGSRGH(float2 p) { return InputTexture.GatherGreen(sampler_LinearClamp, p); }
-        half4 SGSRBH(float2 p) { return InputTexture.GatherBlue(sampler_LinearClamp, p); }
-        half4 SGSRAH(float2 p) { return InputTexture.GatherAlpha(sampler_LinearClamp, p); }
-        half4 SGSRRGBH(float2 p) { return InputTexture.SampleLevel(sampler_LinearClamp, p, 0); }
+        half4 SGSRRGBH(float2 p) { return _MainTex.SampleLevel(sampler_LinearClamp, p, 0); }
 
         half4 SGSRH(float2 p, uint channel)
         {
-            if (channel == 0) return SGSRRH(p);
-            if (channel == 1) return SGSRGH(p);
-            if (channel == 2) return SGSRBH(p);
-            return SGSRAH(p);
+            if (channel == 0) return _MainTex.GatherRed(sampler_PointClamp, p);
+            if (channel == 1) return _MainTex.GatherGreen(sampler_PointClamp, p);
+            if (channel == 2) return _MainTex.GatherBlue(sampler_PointClamp, p);
+            return _MainTex.GatherAlpha(sampler_PointClamp, p);
         }
 
         #define SGSR_MOBILE
@@ -41,7 +36,7 @@ Shader "Hidden/KageRP/SGSR1"
         half4 SnapdragonGameSuperResolution(float2 uv)
         {
             half4 OutColor = half4(0, 0, 0, 1);
-            SgsrYuvH(OutColor, uv, _SGSR_ViewportInfo);
+            SgsrYuvH(OutColor, uv, _MainTex_TexelSize);
             return OutColor;
         }
         ENDHLSL
