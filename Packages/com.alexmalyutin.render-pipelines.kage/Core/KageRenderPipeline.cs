@@ -36,7 +36,7 @@ namespace Rendering.KageRP
             {
                 var cmd = CommandBufferPool.Get();
 
-                var sampler = ProfilingSampler.Get(camera.cameraType);
+                var sampler = new ProfilingSampler(camera.name); // .Get(camera.name);
 
                 var rgParams = new RenderGraphParameters()
                 {
