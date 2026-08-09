@@ -24,8 +24,8 @@ MonoBehaviour:
   - rid: 6020882062693892159
   - rid: 6020882086145032377
   - rid: 6020882155858821181
-  - rid: 6020882227324518455
   - rid: 5932823116429394001
+  - rid: 6020882227324518455
   - rid: 5932823116429394034
   references:
     version: 2
@@ -61,7 +61,7 @@ MonoBehaviour:
       type: {class: ForwardGBufferPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}
       data:
         IsActive: 1
-        UseRenderScale: 1
+        UseRenderScale: 0
         RenderSacle: 0.75
     - rid: 6020882026761289781
       type: {class: DeferredLightingPass, ns: Rendering.KageRP, asm: Rendering.KageRP.Core}

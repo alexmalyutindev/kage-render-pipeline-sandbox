@@ -1412,8 +1412,8 @@ Transform:
   m_GameObject: {fileID: 513765492}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.39, y: 1.5, z: 7.26}
-  m_LocalScale: {x: 6, y: 3, z: 6}
+  m_LocalPosition: {x: -6.0791, y: 3.6067, z: 3.7307}
+  m_LocalScale: {x: 10.621421, y: 7.2135, z: 13.058425}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1527,6 +1527,14 @@ PrefabInstance:
       propertyPath: Target.TrackingTarget
       value: 
       objectReference: {fileID: 1895699739}
+    - target: {fileID: 3600616585576225058, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
+      propertyPath: PanAxis.Recentering.Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3600616585576225058, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
+      propertyPath: TiltAxis.Recentering.Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7522247111663242657, guid: 21b667a7238e0c440b6cafd867108fcb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.9326427
@@ -3312,7 +3320,7 @@ Transform:
   m_GameObject: {fileID: 1026047442}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.9888575, z: -0, w: 0.14886527}
-  m_LocalPosition: {x: 1.536, y: 0.5, z: 1.669}
+  m_LocalPosition: {x: 2.25, y: 1.604, z: 1.669}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

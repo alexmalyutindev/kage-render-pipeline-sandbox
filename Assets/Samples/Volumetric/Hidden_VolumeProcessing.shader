@@ -125,6 +125,14 @@ Shader "Hidden/KageRP/VolumeProcessing"
             #pragma fragment Fragment
 
             Texture2D<float> _Depth;
+            
+            // Henyey-Greenstein Phase Function
+            half ComputePhaseHG(half cosTheta, half g)
+            {
+                half g2 = g * g;
+                half denom = 1.0h + g2 - 2.0h * g * cosTheta;
+                return (1.0h - g2) / (12.56637h * denom * sqrt(denom)); // 4 * PI ≈ 12.56637
+            }
 
             half4 Fragment(Varyings input) : SV_Target
             {
@@ -135,16 +143,20 @@ Shader "Hidden/KageRP/VolumeProcessing"
 
                 half4 minThicknesses = _MainTex.GatherRed(sampler_PointClamp, input.uv);
                 half4 maxThicknesses = _MainTex.GatherGreen(sampler_PointClamp, input.uv);
-                half4 shadowAttens = _MainTex.GatherBlue(sampler_PointClamp, input.uv);
+                half4 minShadowAttens = _MainTex.GatherBlue(sampler_PointClamp, input.uv);
+                half4 maxShadowAttens = _MainTex.GatherAlpha(sampler_PointClamp, input.uv);
 
                 minThicknesses = max(0.0h, minThicknesses);
                 maxThicknesses = max(0.0h, maxThicknesses);
-                shadowAttens = saturate(shadowAttens);
+
+                minShadowAttens = saturate(minShadowAttens);
+                maxShadowAttens = saturate(maxShadowAttens);
 
                 half4 depthDelta = max(maxDepths - minDepths, 0.0001h);
                 half4 zWeights = saturate((sceneDepth - minDepths) / depthDelta);
 
                 half4 thicknesses = lerp(minThicknesses, maxThicknesses, zWeights);
+                half4 shadowAttens = lerp(minShadowAttens, maxShadowAttens, zWeights);
 
                 half2 pixelUV = input.uv * _MainTex_TexelSize.zw - 0.5f;
                 half2 f = frac(pixelUV);
@@ -160,10 +172,16 @@ Shader "Hidden/KageRP/VolumeProcessing"
 
                 half thickness = dot(thicknesses, weights);
                 half shadowAtten = dot(shadowAttens, weights);
-                half transmittance = 1.0f - exp2(-thickness);
+                half transmittance = 1.0f - exp2(-50.0h * thickness);
+                
+                float3 positionWS = ComputeWorldSpacePosition(input.uv, UNITY_RAW_FAR_CLIP_VALUE, UNITY_MATRIX_I_VP);
+                float3 viewDirection = normalize(positionWS - _WorldSpaceCameraPos.xyz);
+                float3 lightDirection = _MainLightPosition.xyz; 
+                half cosTheta = dot(viewDirection, lightDirection);
+                half g = 0.6h; 
+                half phase = ComputePhaseHG(cosTheta, g);
 
-                // return shadowAtten;
-                return transmittance * shadowAtten;
+                return transmittance * shadowAtten * phase;
             }
             ENDHLSL
         }

@@ -124,7 +124,7 @@ namespace Samples.Volumetric
                 cmd.Blit(data.Depth, data.MinMaxDepth, data.Material, 0);
 
                 cmd.SetRenderTarget(data.Transmittance);
-                cmd.ClearRenderTarget(false, true, Color.black);
+                cmd.ClearRenderTarget(false, true, Color.clear);
                 cmd.SetViewProjectionMatrices(data.View, data.Proj);
                 
                 cmd.SetGlobalTexture("_MinMaxDepth", data.MinMaxDepth);
@@ -133,6 +133,11 @@ namespace Samples.Volumetric
 
                 cmd.SetGlobalTexture("_Depth", data.Depth);
                 cmd.SetGlobalTexture("_LowDepth", data.MinMaxDepth);
+
+                // TODO: Move to camera initialization!
+                var proj = GL.GetGPUProjectionMatrix(data.Proj, true);
+                cmd.SetGlobalMatrix("unity_MatrixInvVP", (proj * data.View).inverse);
+
                 cmd.Blit(data.Transmittance, data.Target, data.Material, 1);
             });
         }
