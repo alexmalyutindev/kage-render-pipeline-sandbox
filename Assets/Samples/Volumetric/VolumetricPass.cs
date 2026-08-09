@@ -29,22 +29,21 @@ namespace Samples.Volumetric
             _shaderPassName = new ShaderTagId("Volume");
         }
 
-        private class PassData
+        private class CombinedPassData
         {
+            // Shader Data
+            public Material Material;
             public Matrix4x4 View;
             public Matrix4x4 Proj;
-            public RendererListHandle List;
             public Vector4 RenderSizeTexel;
-            public TextureHandle Transmittance;
-        }
-        
-        private class UpscaleData
-        {
-            public Material Material;
-
+            
+            // Renderer List
+            public RendererListHandle List;
+            
+            // Textures
             public TextureHandle Transmittance;
             public TextureHandle Depth;
-            public TextureHandle LowDepth;
+            public TextureHandle MinMaxDepth;
             public TextureHandle Target;
         }
 
@@ -58,12 +57,12 @@ namespace Samples.Volumetric
             var persistentFrameData = frameData.Get<PersistentFrameData>();
             var frameBufferData = persistentFrameData.Context.Get<PrevFrameBufferData>();
 
-
             var downscaleFactor = 4.0f;
             var renderDesc = gBufferData.GBuffer0.GetDescriptor(renderGraph);
             var width = Mathf.CeilToInt(renderDesc.width / downscaleFactor);
             var height = Mathf.CeilToInt(renderDesc.height / downscaleFactor);
 
+            // Transmittance Texture
             var desc = new TextureDesc(width, height)
             {
                 name = "_TransmittanceBuffer",
@@ -72,75 +71,70 @@ namespace Samples.Volumetric
                 clearColor = Color.clear
             };
             var transmittance = renderGraph.CreateTexture(desc);
+            
+            using var builder = renderGraph.AddUnsafePass<CombinedPassData>("Volume.CombinedPass", out var passData);
+            builder.AllowPassCulling(false);
+            builder.AllowGlobalStateModification(true);
 
-            using (var builder = renderGraph.AddRasterRenderPass<PassData>(nameof(VolumetricPass), out var passData))
+            // Assign Matrices and Globals
+            passData.Material = VolumeProcessing;
+            passData.RenderSizeTexel = new Vector4(desc.width, desc.height, 1.0f / desc.width, 1.0f / desc.height);
+            passData.View = cameraData.Camera.worldToCameraMatrix;
+            passData.Proj = cameraData.Camera.projectionMatrix;
+
+            // Setup Renderer List
+            var drawingSettings = new DrawingSettings(_shaderPassName, new SortingSettings(cameraData.Camera))
             {
-                builder.AllowPassCulling(false);
+                mainLightIndex = lightingData.MainLightIndex,
+            };
 
-                passData.RenderSizeTexel = new Vector4(desc.width, desc.height, 1.0f / desc.width, 1.0f / desc.height);
-                passData.View = cameraData.Camera.worldToCameraMatrix;
-                passData.Proj = cameraData.Camera.projectionMatrix;
-
-                var drawingSettings = new DrawingSettings(_shaderPassName, new SortingSettings(cameraData.Camera))
-                {
-                    mainLightIndex = lightingData.MainLightIndex,
-                };
-
-                var rendererListDesc = new RendererListParams()
-                {
-                    cullingResults = cullingResultData.CullingResult,
-                    drawSettings = drawingSettings,
-                    filteringSettings = _filteringSettings,
-                };
-                passData.List = renderGraph.CreateRendererList(rendererListDesc);
-                builder.UseRendererList(passData.List);
-
-                builder.UseTexture(frameBufferData.GetFrameDepth(renderGraph));
-
-                passData.Transmittance = transmittance;
-
-                builder.AllowGlobalStateModification(true);
-                builder.SetRenderAttachment(passData.Transmittance, 0, AccessFlags.WriteAll);
-                builder.SetRenderFunc<PassData>(static (data, context) =>
-                {
-                    context.cmd.SetViewProjectionMatrices(data.View, data.Proj);
-                    context.cmd.ClearRenderTarget(RTClearFlags.Color, Color.black, 0.0f, 0);
-                    context.cmd.SetGlobalVector("_RenderSizeTexel", data.RenderSizeTexel);
-                    context.cmd.DrawRendererList(data.List);
-                });
-            }
-
-            using (var builder = renderGraph.AddUnsafePass<UpscaleData>("Volume.Upscale", out var passData))
+            var rendererListDesc = new RendererListParams()
             {
-                passData.Material = VolumeProcessing;
+                cullingResults = cullingResultData.CullingResult,
+                drawSettings = drawingSettings,
+                filteringSettings = _filteringSettings,
+            };
+                
+            passData.List = renderGraph.CreateRendererList(rendererListDesc);
+            builder.UseRendererList(passData.List);
 
-                passData.Transmittance = transmittance;
-                builder.UseTexture(passData.Transmittance);
+            // Assign Textures to Builder with proper Access Flags
+            passData.Transmittance = transmittance;
+            builder.UseTexture(passData.Transmittance, AccessFlags.ReadWrite); // Written via RenderTarget, Read via Blit
 
-                var lowDepthDesc = new TextureDesc(width, height)
-                {
-                    name = "_LowDepth",
-                    format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RFloat, false),
-                };
-                passData.LowDepth = builder.CreateTransientTexture(lowDepthDesc);
-                builder.UseTexture(passData.LowDepth);
+            var minMaxDepthDesc = new TextureDesc(width, height)
+            {
+                name = "_MinMaxDepth",
+                format = GraphicsFormatUtility.GetGraphicsFormat(RenderTextureFormat.RGHalf, false),
+            };
+            passData.MinMaxDepth = builder.CreateTransientTexture(minMaxDepthDesc);
+            builder.UseTexture(passData.MinMaxDepth, AccessFlags.ReadWrite);
 
-                passData.Depth = frameBufferData.GetFrameDepth(renderGraph);
-                builder.UseTexture(passData.Depth);
+            passData.Depth = frameBufferData.GetFrameDepth(renderGraph);
+            builder.UseTexture(passData.Depth, AccessFlags.Read);
 
-                passData.Target = gBufferData.GBuffer0;
-                builder.UseTexture(passData.Target, AccessFlags.Write);
+            passData.Target = gBufferData.GBuffer0;
+            builder.UseTexture(passData.Target, AccessFlags.Write);
 
-                builder.SetRenderFunc<UpscaleData>(static (data, context) =>
-                {
-                    var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                    cmd.Blit(data.Depth, data.LowDepth);
+            // Execution
+            builder.SetRenderFunc<CombinedPassData>(static (data, context) =>
+            {
+                var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                
+                cmd.Blit(data.Depth, data.MinMaxDepth, data.Material, 0);
 
-                    cmd.SetGlobalTexture("_Depth", data.Depth);
-                    cmd.SetGlobalTexture("_LowDepth", data.LowDepth);
-                    cmd.Blit(data.Transmittance, data.Target, data.Material, 0);
-                });
-            }
+                cmd.SetRenderTarget(data.Transmittance);
+                cmd.ClearRenderTarget(false, true, Color.black);
+                cmd.SetViewProjectionMatrices(data.View, data.Proj);
+                
+                cmd.SetGlobalTexture("_MinMaxDepth", data.MinMaxDepth);
+                cmd.SetGlobalVector("_RenderSizeTexel", data.RenderSizeTexel);
+                cmd.DrawRendererList(data.List);
+
+                cmd.SetGlobalTexture("_Depth", data.Depth);
+                cmd.SetGlobalTexture("_LowDepth", data.MinMaxDepth);
+                cmd.Blit(data.Transmittance, data.Target, data.Material, 1);
+            });
         }
     }
 }
