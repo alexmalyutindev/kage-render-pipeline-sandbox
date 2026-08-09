@@ -114,53 +114,58 @@ Shader "Hidden/KageRP/VolumeProcessing"
         }
 
         Pass
-{
-    Name "Upscale"
+        {
+            Name "Upscale"
 
-    Cull Off
-    Blend One One
+            Cull Off
+            Blend One One
 
-    HLSLPROGRAM
-    #pragma vertex FullScreenVertex
-    #pragma fragment Fragment
+            HLSLPROGRAM
+            #pragma vertex FullScreenVertex
+            #pragma fragment Fragment
 
-    Texture2D<float> _Depth;
+            Texture2D<float> _Depth;
 
-    half4 Fragment(Varyings input) : SV_Target
-    {
-        float sceneDepth = LinearEyeDepth(_Depth.Sample(sampler_LinearClamp, input.uv), _ZBufferParams);
+            half4 Fragment(Varyings input) : SV_Target
+            {
+                float sceneDepth = LinearEyeDepth(_Depth.Sample(sampler_LinearClamp, input.uv), _ZBufferParams);
 
-        half4 minDepths = _MinMaxDepth.GatherRed(sampler_PointClamp, input.uv); 
-        half4 maxDepths = _MinMaxDepth.GatherGreen(sampler_PointClamp, input.uv); 
+                half4 minDepths = _MinMaxDepth.GatherRed(sampler_PointClamp, input.uv);
+                half4 maxDepths = _MinMaxDepth.GatherGreen(sampler_PointClamp, input.uv);
 
-        half4 minThicknesses = _MainTex.GatherRed(sampler_PointClamp, input.uv);
-        half4 maxThicknesses = _MainTex.GatherGreen(sampler_PointClamp, input.uv);
-        half4 shadowAtten = _MainTex.GatherBlue(sampler_LinearClamp, input.uv);
+                half4 minThicknesses = _MainTex.GatherRed(sampler_PointClamp, input.uv);
+                half4 maxThicknesses = _MainTex.GatherGreen(sampler_PointClamp, input.uv);
+                half4 shadowAttens = _MainTex.GatherBlue(sampler_PointClamp, input.uv);
 
-        minThicknesses = max(0.0h, minThicknesses);
-        maxThicknesses = max(0.0h, maxThicknesses);
+                minThicknesses = max(0.0h, minThicknesses);
+                maxThicknesses = max(0.0h, maxThicknesses);
+                shadowAttens = saturate(shadowAttens);
 
-        half4 depthDelta = max(maxDepths - minDepths, 0.0001h);
-        half4 zWeights = saturate((sceneDepth - minDepths) / depthDelta);
+                half4 depthDelta = max(maxDepths - minDepths, 0.0001h);
+                half4 zWeights = saturate((sceneDepth - minDepths) / depthDelta);
 
-        half4 thicknesses = lerp(minThicknesses, maxThicknesses, zWeights);
+                half4 thicknesses = lerp(minThicknesses, maxThicknesses, zWeights);
 
-        half2 pixelUV = input.uv * _MainTex_TexelSize.zw - 0.5f;
-        half2 f = frac(pixelUV);
+                half2 pixelUV = input.uv * _MainTex_TexelSize.zw - 0.5f;
+                half2 f = frac(pixelUV);
 
-        half4 bilinearWeights = half4(f.xy, 1.0f - f.xy);
-        bilinearWeights = bilinearWeights.zxxz * bilinearWeights.yyww;
+                half4 bilinearWeights = half4(f.xy, 1.0f - f.xy);
+                bilinearWeights = bilinearWeights.zxxz * bilinearWeights.yyww;
 
-        half4 depthDist = max(0.0h, max(minDepths - sceneDepth, sceneDepth - maxDepths));
-        half4 depthWeights = exp2(-50.0f * depthDist) + 0.0001f;
+                half4 depthDist = max(0.0h, max(minDepths - sceneDepth, sceneDepth - maxDepths));
+                half4 depthWeights = exp2(-50.0f * depthDist) + 0.0001f;
 
-        half4 weights = depthWeights * bilinearWeights;
-        weights /= dot(weights, 1.0f);
+                half4 weights = depthWeights * bilinearWeights;
+                weights /= dot(weights, 1.0f);
 
-        half thickness = dot(thicknesses, weights);
-        return 1.0f - exp2(-thickness);
-    }
-    ENDHLSL
-}
+                half thickness = dot(thicknesses, weights);
+                half shadowAtten = dot(shadowAttens, weights);
+                half transmittance = 1.0f - exp2(-thickness);
+
+                // return shadowAtten;
+                return transmittance * shadowAtten;
+            }
+            ENDHLSL
+        }
     }
 }
